@@ -1,0 +1,47 @@
+﻿@typeparam Titem
+
+@if(MiLista is null)
+{
+    @if(Loading is null)
+    {
+        <div class="align-items-center">
+            <img src="https://www.superiorlawncareusa.com/wp-content/uploads/2020/05/loading-gif-png-5.gif" />
+        </div>
+    }
+    else
+    {
+        @Loading
+    }
+}else if (MiLista.Count == 0)
+{
+    @if(NoRecords is null)
+    {
+        <div class="align-items-center">
+            <p>No hay registros para mostrar...</p>
+        </div>
+    }
+    else
+    {
+        @NoRecords
+    }
+}
+else
+{
+    @Body
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? Loading { get; set; }
+
+    [Parameter]
+    public RenderFragment? NoRecords { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public RenderFragment Body { get; set; } = null!;
+
+    [Parameter]
+    [EditorRequired]
+    public List<Titem> MiLista { get; set; } = null!;
+}
