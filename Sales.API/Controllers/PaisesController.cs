@@ -39,18 +39,53 @@ namespace Sales.API.Controllers
         [HttpPost]
         public async Task<ActionResult> PostAsync(Pais pais)
         {
-            //_context.Add(pais);
-            _context.Paises.Add(pais);
-            await _context.SaveChangesAsync();
-            return Ok(pais);
+            try
+            {
+                //_context.Add(pais);
+                _context.Paises.Add(pais);
+                await _context.SaveChangesAsync();
+                return Ok(pais);
+
+            }
+            catch (DbUpdateException dbUpdateException)
+            {
+                if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                {
+                    return BadRequest("Ya existe un país con el mismo nombre");
+                }
+
+                return BadRequest(dbUpdateException.Message);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut]
         public async Task<ActionResult> PutAsync(Pais pais)
         {
-            _context.Update(pais);
-            await _context.SaveChangesAsync();
-            return Ok(pais);
+            try
+            {
+                _context.Update(pais);
+                await _context.SaveChangesAsync();
+                return Ok(pais);
+            }
+            catch (DbUpdateException dbUpdateException)
+            {
+                if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                {
+                    return BadRequest("Ya existe un país con el mismo nombre");
+                }
+
+                return BadRequest(dbUpdateException.Message);
+
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id:int}")]

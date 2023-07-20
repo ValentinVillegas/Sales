@@ -18,7 +18,7 @@
         if (HTTPresponse.Error)
         {
             var message = await HTTPresponse.GetErrorMessageAsync();
-            await sweetAlertService.FireAsync("Error", message);
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
             return;
         }
 
