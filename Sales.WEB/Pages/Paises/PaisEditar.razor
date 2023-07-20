@@ -1,0 +1,63 @@
+﻿@page "/paises/editar/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService sweetAlertService
+
+<h3>Editar País</h3>
+
+@if(pais is null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <PaisForm @ref="paisForm" Pais="pais" OnValidSubmit="EditarAsync" ReturnAction="Regresar"></PaisForm>
+}
+
+@code {
+    private Pais pais;
+    private PaisForm paisForm;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHTTP = await repository.Get<Pais>($"/api/paises/{Id}");
+
+        if (responseHTTP.Error)
+        {
+            if(responseHTTP.HttpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/paises");
+                return;
+            }
+
+            var message = await responseHTTP.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        pais = responseHTTP.Response;
+    }
+
+    private async Task EditarAsync()
+    {
+        var responseHttp = await repository.Put("/api/paises", pais);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        Regresar();
+    }
+
+    private void Regresar()
+    {
+        paisForm.formularioEnviado = true;
+        navigationManager.NavigateTo("/paises");
+    }
+}

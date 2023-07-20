@@ -39,7 +39,8 @@ namespace Sales.API.Controllers
         [HttpPost]
         public async Task<ActionResult> PostAsync(Pais pais)
         {
-            _context.Add(pais);
+            //_context.Add(pais);
+            _context.Paises.Add(pais);
             await _context.SaveChangesAsync();
             return Ok(pais);
         }
