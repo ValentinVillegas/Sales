@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sales.API.Data;
 
@@ -10,9 +11,11 @@ using Sales.API.Data;
 namespace Sales.API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230720222028_PruebaOrdenamientoPaises")]
+    partial class PruebaOrdenamientoPaises
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,7 +42,9 @@ namespace Sales.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PaisId", "Nombre")
+                    b.HasIndex("PaisId");
+
+                    b.HasIndex("Nombre", "PaisId")
                         .IsUnique();
 
                     b.ToTable("Estados");
@@ -63,7 +68,9 @@ namespace Sales.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EstadoId", "Nombre")
+                    b.HasIndex("EstadoId");
+
+                    b.HasIndex("Nombre", "EstadoId")
                         .IsUnique();
 
                     b.ToTable("Municipios");

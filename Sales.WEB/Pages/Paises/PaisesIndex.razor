@@ -16,8 +16,9 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th></th>
                     <th>Pais</th>
+                    <th>Estados</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
 
@@ -26,11 +27,14 @@
                 {
                     <tr>
                         <td>
-                            <a class="btn btn-warning" href="/paises/editar/@p.Id">Editar</a>
-                            <button class="btn btn-danger" @onclick = "(() => EliminarPaisAsync(p.Id))">Borrar</button>
+                            @p.Nombre
                         </td>
                         <td>
-                            @p.Nombre
+                            @p.CantidadEstados
+                        </td>
+                        <td>
+                            <a class="btn btn-warning" href="/paises/editar/@p.Id">Editar</a>
+                            <button class="btn btn-danger" @onclick="(() => EliminarPaisAsync(p.Id))">Borrar</button>
                         </td>
                     </tr>
                 }

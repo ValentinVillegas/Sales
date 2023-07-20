@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sales.API.Data;
 
@@ -10,9 +11,11 @@ using Sales.API.Data;
 namespace Sales.API.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230720193601_AddEstadosAndMunicipiosTable")]
+    partial class AddEstadosAndMunicipiosTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -34,13 +37,12 @@ namespace Sales.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("PaisId")
+                    b.Property<int>("paisId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PaisId", "Nombre")
-                        .IsUnique();
+                    b.HasIndex("paisId");
 
                     b.ToTable("Estados");
                 });
@@ -92,13 +94,13 @@ namespace Sales.API.Migrations
 
             modelBuilder.Entity("Sales.Shared.Entidades.Estado", b =>
                 {
-                    b.HasOne("Sales.Shared.Entidades.Pais", "Pais")
+                    b.HasOne("Sales.Shared.Entidades.Pais", "pais")
                         .WithMany("Estados")
-                        .HasForeignKey("PaisId")
+                        .HasForeignKey("paisId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Pais");
+                    b.Navigation("pais");
                 });
 
             modelBuilder.Entity("Sales.Shared.Entidades.Municipio", b =>

@@ -10,5 +10,10 @@ namespace Sales.Shared.Entidades
         [Required(ErrorMessage = "El campo {0} es obligatorio.")]
         [MaxLength(100, ErrorMessage = "El campo {0} no puede tener más de {1} caracteres.")]
         public string Nombre { get; set; } = null!;
+
+        public ICollection<Estado>? Estados { get; set; }
+
+        public int CantidadEstados => Estados == null ? 0 : Estados.Count;
+
     }
 }
