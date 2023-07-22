@@ -1,18 +1,17 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
 using Sales.API.Data;
 using Sales.Shared.Entidades;
 
 namespace Sales.API.Controllers
 {
     [ApiController]
-    [Route("/api/paises")]
-    public class PaisesController : ControllerBase
+    [Route("/api/municipios")]
+    public class MunicipiosController:ControllerBase
     {
         private readonly DataContext _context;
 
-        public PaisesController(DataContext context)
+        public MunicipiosController(DataContext context)
         {
             _context = context;
         }
@@ -20,44 +19,38 @@ namespace Sales.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAsync()
         {
-            return Ok(await _context.Paises.Include(x => x.Estados).OrderBy(x => x.Nombre).ToListAsync());
+            return Ok(await _context.Municipios.OrderBy(x => x.Nombre).ToListAsync());
         }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetAsync(int id)
         {
-            var pais = await _context.Paises.Include(x => x.Estados).ThenInclude(x => x.Municipios).FirstOrDefaultAsync(x => x.Id == id);
+            var municipio = await _context.Municipios.FirstOrDefaultAsync(x => x.Id == id);
 
-            if (pais == null)
+            if (municipio == null)
             {
                 return NotFound();
             }
 
-            return Ok(pais);
+            return Ok(municipio);
         }
 
-        //[HttpGet("full")]
-        //public async Task<IActionResult> GetFullAsync()
-        //{
-        //    return Ok(await _context.Paises.Include(x => x.Estados).ThenInclude(x => x.Municipios).ToListAsync());
-        //}
-
         [HttpPost]
-        public async Task<ActionResult> PostAsync(Pais pais)
+        public async Task<ActionResult> PostAsync(Municipio municipio)
         {
             try
             {
                 //_context.Add(pais);
-                _context.Paises.Add(pais);
+                _context.Municipios.Add(municipio);
                 await _context.SaveChangesAsync();
-                return Ok(pais);
+                return Ok(municipio);
 
             }
             catch (DbUpdateException dbUpdateException)
             {
                 if (dbUpdateException.InnerException.Message.Contains("duplicate"))
                 {
-                    return BadRequest("Ya existe un país con el mismo nombre");
+                    return BadRequest("Ya existe un municipio con el mismo nombre");
                 }
 
                 return BadRequest(dbUpdateException.Message);
@@ -70,19 +63,19 @@ namespace Sales.API.Controllers
         }
 
         [HttpPut]
-        public async Task<ActionResult> PutAsync(Pais pais)
+        public async Task<ActionResult> PutAsync(Municipio municipio)
         {
             try
             {
-                _context.Update(pais);
+                _context.Update(municipio);
                 await _context.SaveChangesAsync();
-                return Ok(pais);
+                return Ok(municipio);
             }
             catch (DbUpdateException dbUpdateException)
             {
                 if (dbUpdateException.InnerException.Message.Contains("duplicate"))
                 {
-                    return BadRequest("Ya existe un país con el mismo nombre");
+                    return BadRequest("Ya existe un municipio con el mismo nombre");
                 }
 
                 return BadRequest(dbUpdateException.Message);
@@ -97,14 +90,14 @@ namespace Sales.API.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteAsync(int id)
         {
-            var pais = await _context.Paises.FirstOrDefaultAsync(x => x.Id == id);
+            var municipio = await _context.Municipios.FirstOrDefaultAsync(x => x.Id == id);
 
-            if (pais == null)
+            if (municipio == null)
             {
                 return NotFound();
             }
 
-            _context.Remove(pais);
+            _context.Remove(municipio);
             await _context.SaveChangesAsync();
 
             return NoContent();

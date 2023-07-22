@@ -33,8 +33,9 @@
                             @p.CantidadEstados
                         </td>
                         <td>
+                            <a class="btn btn-info" href="/paises/detalles/@p.Id">Detalles</a>
                             <a class="btn btn-warning" href="/paises/editar/@p.Id">Editar</a>
-                            <button class="btn btn-danger" @onclick="(() => EliminarPaisAsync(p.Id))">Borrar</button>
+                            <button class="btn btn-danger" @onclick="(() => EliminarPaisAsync(p.Id))">Eliminar</button>
                         </td>
                     </tr>
                 }
@@ -84,6 +85,5 @@
         }
 
         await LoadAsync();
-
     }
 }

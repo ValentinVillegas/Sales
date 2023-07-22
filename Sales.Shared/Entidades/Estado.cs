@@ -17,11 +17,11 @@ namespace Sales.Shared.Entidades
         [MaxLength(100, ErrorMessage = "El campo {0} no puede tener más de {1} caracteres.")]
         public string Nombre { get; set; } = null!;
 
-        public Pais Pais { get; set; }
+        public Pais? Pais { get; set; }
 
         public int PaisId { get; set; }
 
-        public ICollection<Municipio> Municipios { get; set;}
+        public ICollection<Municipio>? Municipios { get; set;}
 
         public int CantidadMunicipios => Municipios == null ? 0 : Municipios.Count;
     }
