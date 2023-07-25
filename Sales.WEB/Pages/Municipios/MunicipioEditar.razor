@@ -1,0 +1,63 @@
+﻿@page "/municipios/editar/{MunicipioId:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService sweetAlertService
+
+<h3>Editar Municipio</h3>
+
+@if(municipio is null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <MunicipioForm @ref="municipioForm" Municipio="municipio" OnValidSubmit="EditarAsync" ReturnAction="Regresar" />
+}
+
+@code {
+    Municipio? municipio;
+    MunicipioForm? municipioForm;
+
+    [Parameter]
+    public int MunicipioId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.Get<Municipio>($"/api/municipios/{MunicipioId}");
+
+        if (responseHttp.Error)
+        {
+            if(responseHttp.HttpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo($"/estados/detalles/{municipio.EstadoId}");
+                return;
+            }
+
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        municipio = responseHttp.Response;
+    }
+
+    private async Task EditarAsync()
+    {
+        var responseHttp = await repository.Put("/api/municipios", municipio);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        Regresar();
+    }
+
+    private void Regresar()
+    {
+        municipioForm.formularioEnviado = true;
+        navigationManager.NavigateTo($"/estados/detalles/{municipio.EstadoId}");
+    }
+}

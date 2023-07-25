@@ -1,0 +1,63 @@
+﻿@page "/estados/editar/{EstadoId:int}"
+@inject IRepository repository
+@inject SweetAlertService sweetAlertService
+@inject NavigationManager navigationManager
+
+<h3>Editar Estado</h3>
+
+@if (estado is null)
+{
+    <p>Cargando...</p>
+}else
+{
+    <EstadoForm @ref="estadoForm" Estado="estado" OnValidSubmit="EditarAsync" ReturnAction="Regresar"/>
+}
+
+
+@code {
+    private Estado? estado;
+    private EstadoForm? estadoForm;
+
+    [Parameter]
+    public int EstadoId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHttp = await repository.Get<Estado>($"/api/estados/{EstadoId}");
+
+        if (responseHttp.Error)
+        {
+            if(responseHttp.HttpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/paises");
+                return;
+            }
+
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        estado = responseHttp.Response;
+    }
+
+    private async Task EditarAsync()
+    {
+        var responseHttp = await repository.Put("/api/estados", estado);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        Regresar();
+    }
+
+    private void Regresar()
+    {
+        estadoForm!.formularioEnviado = true;
+        navigationManager.NavigateTo($"/paises/detalles/{estado!.PaisId}");
+    }
+}

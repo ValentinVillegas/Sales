@@ -1,0 +1,38 @@
+﻿@page "/municipios/crear/{EstadoId:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService sweetAlertService
+
+<h3>Crear Municipio</h3>
+
+<MunicipioForm @ref="municipioForm" Municipio="municipio" OnValidSubmit="Crear" ReturnAction="Regresar"/>
+
+@code {
+    private Municipio? municipio = new();
+    private MunicipioForm? municipioForm;
+
+    [Parameter]
+    public int EstadoId { get; set; }
+
+    private async Task Crear()
+    {
+        municipio.EstadoId = EstadoId;
+
+        var HttpResponse = await repository.Post<Municipio>("/api/municipios", municipio);
+
+        if (HttpResponse.Error)
+        {
+            var message = await HttpResponse.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        Regresar();
+    }
+
+    private void Regresar()
+    {
+        municipioForm!.formularioEnviado = true;    
+        navigationManager.NavigateTo($"/estados/detalles/{EstadoId}");
+    }
+}
