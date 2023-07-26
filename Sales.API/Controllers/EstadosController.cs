@@ -23,13 +23,17 @@ namespace Sales.API.Controllers
         {
             var queryable = _context.Estados.Include(e => e.Municipios).Where(e => e.PaisId == paginacion.Id).AsQueryable();
 
+            if (!string.IsNullOrWhiteSpace(paginacion.Filter)) queryable = queryable.Where(e => e.Nombre.ToLower().Contains(paginacion.Filter.ToLower()));
+
             return Ok(await queryable.OrderBy(e => e.Nombre).Paginate(paginacion).ToListAsync());
         }
 
         [HttpGet("totalPages")]
         public async Task<ActionResult> GetPaginas([FromQuery] PaginationDTO paginacion)
         {
-            var queryable = _context.Estados.Where(x => x.PaisId == paginacion.Id).AsQueryable();
+            var queryable = _context.Estados.Where(e => e.PaisId == paginacion.Id).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(paginacion.Filter)) queryable = queryable.Where(e => e.Nombre.ToLower().Contains(paginacion.Filter.ToLower()));
 
             double cantidad = await queryable.CountAsync();
             double totalPaginas = Math.Ceiling(cantidad / paginacion.RecordsNumber);
