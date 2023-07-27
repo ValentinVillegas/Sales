@@ -20,5 +20,7 @@ namespace Sales.Shared.Entidades
         public Estado? Estado { get; set; }
 
         public int EstadoId { get; set; }
+
+        public ICollection<Usuario>? Usuarios { get; set; }
     }
 }

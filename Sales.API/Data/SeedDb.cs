@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Sales.API.Helpers;
 using Sales.API.Services;
 using Sales.Shared.Entidades;
+using Sales.Shared.Enums;
 using Sales.Shared.Responses;
 using System.Linq.Expressions;
 
@@ -10,17 +12,44 @@ namespace Sales.API.Data
     {
         private readonly DataContext _context;
         private readonly IApiService _apiService;
+        private readonly IUserHelper _userHelper;
 
-        public SeedDb(DataContext context, IApiService apiService)
+        public SeedDb(DataContext context, IApiService apiService, IUserHelper userHelper)
         {
             _context = context;
             _apiService = apiService;
+            _userHelper = userHelper;
         }
 
         public async Task SeedAsync()
         {
             await _context.Database.EnsureCreatedAsync();
-            //await CheckPaisesAsync();
+            await CheckCategoriasAsync();
+            await CheckPaisesAsync();
+            await CheckRolesAsync();
+            await CheckUserAsync("1010", "Valentin", "Villegas", "valentinvillegas22@yopmail.com", "8114638521", "Calle Luna Calle Sol", UserType.Admin);
+        }
+
+        private async Task CheckCategoriasAsync()
+        {
+            if (!_context.Categorias.Any())
+            {
+                List<Categoria> categorias = new List<Categoria>() {
+                    new Categoria { Nombre = "Juegueteríaa"},
+                    new Categoria { Nombre = "Ferretería"},
+                    new Categoria { Nombre = "Electrodomésticos"},
+                    new Categoria { Nombre = "Ropa"},
+                    new Categoria { Nombre = "Deportes"},
+                    new Categoria { Nombre = "Abarrotes"},
+                    new Categoria { Nombre = "Electrónica"},
+                    new Categoria { Nombre = "Linea Blanca"},
+                    new Categoria { Nombre = "Salud"},
+                    new Categoria { Nombre = "Panadería"},
+                };
+
+                _context.Categorias.AddRange(categorias);
+                await _context.SaveChangesAsync();
+            }
         }
 
         private async Task CheckPaisesAsync()
@@ -130,7 +159,6 @@ namespace Sales.API.Data
                 }
                 await _context.SaveChangesAsync();
                 */
-
                 Response responsePaises = await _apiService.GetListAsync<PaisResponse>("/v1", "/countries");
                 if (responsePaises.IsSucces)
                 {
@@ -140,7 +168,7 @@ namespace Sales.API.Data
                     {
                         Pais pais = await _context.Paises!.FirstOrDefaultAsync(c => c.Nombre == paisResponse.Name!)!;
 
-                        if(pais == null)
+                        if (pais == null)
                         {
                             pais = new()
                             {
@@ -154,10 +182,10 @@ namespace Sales.API.Data
                             {
                                 List<EstadoResponse> estados = (List<EstadoResponse>)responseEstados.Result!;
 
-                                foreach(EstadoResponse estadoResponse in estados)
+                                foreach (EstadoResponse estadoResponse in estados)
                                 {
                                     Estado estado = pais.Estados!.FirstOrDefault(e => e.Nombre == estadoResponse.Name!)!;
-                                    if(estado is null)
+                                    if (estado is null)
                                     {
                                         estado = new()
                                         {
@@ -170,8 +198,8 @@ namespace Sales.API.Data
                                         if (responseMunicipios.IsSucces)
                                         {
                                             List<MunicipioResponse> municipios = (List<MunicipioResponse>)responseMunicipios.Result!;
-                                            
-                                            foreach(MunicipioResponse municipioResponse in municipios)
+
+                                            foreach (MunicipioResponse municipioResponse in municipios)
                                             {
                                                 if (municipioResponse.Name == "Mosfellsbær" || municipioResponse.Name == "Șăulița")
                                                 {
@@ -195,7 +223,7 @@ namespace Sales.API.Data
                                 }
                             }
 
-                            if(pais.CantidadEstados > 0)
+                            if (pais.CantidadEstados > 0)
                             {
                                 _context.Paises.Add(pais);
                                 await _context.SaveChangesAsync();
@@ -204,6 +232,37 @@ namespace Sales.API.Data
                     }
                 }
             }
+        }
+
+        private async Task CheckRolesAsync()
+        {
+            await _userHelper.CheckRoleAsync(UserType.Admin.ToString());
+            await _userHelper.CheckRoleAsync(UserType.User.ToString());
+        }
+
+        private async Task<Usuario> CheckUserAsync(string documento, string nombres, string apellidos, string email, string telefono, string direccion, UserType userType)
+        {
+            var user = await _userHelper.GetUserAsync(email);
+
+            if (user is null)
+            {
+                user = new Usuario { 
+                    Nombre = nombres,
+                    Apellido = apellidos,
+                    Email = email,
+                    UserName = email,
+                    PhoneNumber = telefono,
+                    Direccion = direccion,
+                    Documento = documento,
+                    Municipio = _context.Municipios.FirstOrDefault(),
+                    TipoUsuario = userType,
+                };
+
+                await _userHelper.AddUserAsync(user, "123456");
+                await _userHelper.AddUserToRoleAsync(user, userType.ToString());
+            }
+
+            return user;
         }
     }
 }
