@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
 using Sales.API.Data;
@@ -9,6 +11,7 @@ using Sales.Shared.Entidades;
 namespace Sales.API.Controllers
 {
     [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Route("/api/paises")]
     public class PaisesController : ControllerBase
     {
