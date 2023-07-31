@@ -56,6 +56,13 @@ namespace Sales.API.Controllers
             return Ok(pais);
         }
 
+        [AllowAnonymous]
+        [HttpGet("combo")]
+        public async Task<IActionResult> GetCombo()
+        {
+            return Ok(await _context.Paises.ToListAsync());
+        }
+
         //[HttpGet("full")]
         //public async Task<IActionResult> GetFullAsync()
         //{

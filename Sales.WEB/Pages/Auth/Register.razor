@@ -56,7 +56,51 @@
         </div>
         <div class="col-6">
             <div class="mb-3">
-                <label>Ciudad:</label>
+                <label>Pais:</label>
+                <div>
+                    <select class="form-select" @onchange="CargarEstadosAsync">
+                        <option value="0">-- Seleccione un país --</option>
+                        @if(paises is not null){
+                            @foreach (var pais in paises)
+                            {
+                                <option value="@pais.Id">@pais.Nombre</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label>Estado:</label>
+                <div>
+                    <select class="form-select" @onchange="CargarMunicipiosAsync">
+                        <option value="0">-- Seleccione un Estado --</option>
+                        @if (estados is not null)
+                        {
+                            @foreach (var estado in estados)
+                            {
+                                <option value="@estado.Id">@estado.Nombre</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label>Estado:</label>
+                <div>
+                    <select class="form-select" @bind="@userDTO.MunicipioId">
+                        <option value="0">-- Seleccione un Municipio --</option>
+                        @if (municipios is not null)
+                        {
+                            @foreach (var municipio in municipios)
+                            {
+                                <option value="@municipio.Id">@municipio.Nombre</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label>Municipio:</label>
                 <div>
                     <InputNumber class="form-control" @bind-Value="@userDTO.MunicipioId" />
                     <ValidationMessage For="@(() => userDTO.MunicipioId)" />
@@ -90,6 +134,58 @@
 
 @code {
     private UserDTO userDTO = new();
+    private List<Pais>? paises;
+    private List<Estado>? estados;
+    private List<Municipio>? municipios;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarPaisesAsync();
+    }
+
+    private async Task CargarPaisesAsync()
+    {
+        var responseHttp = await repository.Get<List<Pais>>("/api/paises/combo");
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        paises = responseHttp.Response;
+    }
+
+    private async Task CargarEstadosAsync(ChangeEventArgs e)
+    {
+        var paisSeleccionado = Convert.ToInt32(e.Value);
+
+        var responseHttp = await repository.Get<List<Estado>>($"/api/estados/combo/{paisSeleccionado}");
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        estados = responseHttp.Response;
+    }
+
+    private async Task CargarMunicipiosAsync(ChangeEventArgs e)
+    {
+        var estadoSeleccionado = Convert.ToInt32(e.Value);
+        var responseHttp = await repository.Get<List<Municipio>>($"/api/municipios/combo/{estadoSeleccionado}");
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        municipios = responseHttp.Response;
+    }
 
     private async Task CreteUserAsync()
     {
