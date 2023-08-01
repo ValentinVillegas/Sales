@@ -8,7 +8,7 @@
 
 @if (estado is null)
 {
-    <p>Cargando...</p>
+    <div class="spinner"/>
 }else
 {
     <EstadoForm @ref="estadoForm" Estado="estado" OnValidSubmit="EditarAsync" ReturnAction="Regresar"/>

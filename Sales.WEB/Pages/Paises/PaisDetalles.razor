@@ -4,15 +4,71 @@
 @inject SweetAlertService sweetAlertService
 @attribute [Authorize(Roles = "Admin")]
 
-@*<h3>Pais Detalles</h3>*@
-
 @if(pais is null)
 {
-    <p>Cargando...</p>
+    <div class="spinner"/>
 }
 else
 {
-    <h3>Estados de @pais.Nombre</h3>
+    <div class="card">
+        <div class="card-header">
+            <span>
+                <i class="oi oi-globe"></i>&nbsp;Estados de @pais.Nombre
+                <a class="btn btn-sm btn-primary me-2 float-end" href="/estados/crear/@pais.Id"><i class="oi oi-plus"></i>&nbsp;Nuevo Estado</a>
+                <a class="btn btn-sm btn-success me-2 float-end" href="/paises"><i class="oi oi-chevron-left"></i>&nbsp;Regresar</a>
+            </span>
+        </div>
+
+        <div class="card-body">
+            <div class="mb-2" style="display:flex; flex-wrap:wrap; align-items:center;">
+                <div>
+                    <input type="text" style="width:400px" class="form-control" id="titulo" placeholder="Buscar Estado..." @bind-value="Filter" />
+                </div>
+                <div class="mx-2">
+                    <button type="button" class="btn btn-outline-primary" @onclick="AplicarFiltroAsync"><i class="oi oi-layers" />&nbsp;Filtrar</button>
+                    <button type="button" class="btn btn-outline-danger" @onclick="LimpiarFiltroAsync"><i class="oi oi-grid-three-up" />&nbsp;Limpiar</button>
+                </div>
+            </div>
+
+            <Paginacion PaginaActual="currentPage" TotalPaginas="totalPages" SeleccionarPagina="SelectedPageAsync" />
+
+            <ListaGenerica MiLista="estados">
+                <Body>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Estado</th>
+                                <th style="width: 140px">Municipios</th>
+                                <th style="width: 300px">Acciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var estado in estados!)
+                            {
+                                <tr>
+                                    <td>
+                                        @estado.Nombre
+                                    </td>
+                                    <td>
+                                        @estado.CantidadMunicipios
+                                    </td>
+                                    <td>
+                                        <a class="btn btn-info btn-sm" href="/estados/detalles/@estado.Id"><i class="oi oi-list"/>&nbsp;Detalles</a>
+                                        <a class="btn btn-warning btn-sm" href="/estados/editar/@estado.Id"><i class="oi oi-pencil"/>&nbsp;Editar</a>
+                                        <button class="btn btn-danger" @onclick="(() => EliminarEstadoAsync(estado.Id))"><i class="oi oi-trash"/>&nbsp;Eliminar</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </Body>
+            </ListaGenerica>
+        </div>
+    </div>
+
+     @*=====================================================================================================================================================================*@
+    @*<h3>Estados de @pais.Nombre</h3>
 
     <div class="mb-2" style="display:flex; flex-wrap: wrap; align-items:center;">
         <div>
@@ -28,43 +84,7 @@ else
             <button type="button" class="btn btn-outline-primary" @onclick="AplicarFiltroAsync">Filtrar</button>
             <button type="button" class="btn btn-outline-danger" @onclick="LimpiarFiltroAsync">Limpiar</button>
         </div>
-    </div>
-
-    @*<Paginacion CurrentPage="currentPage" TotalPages="totalPages" SelectedPage="SelectedPageAsync" />*@
-    <Paginacion PaginaActual="currentPage" TotalPaginas="totalPages" SeleccionarPagina="SelectedPageAsync" />
-
-    <ListaGenerica MiLista="estados">
-        <Body>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Estado</th>
-                        <th style="width: 140px">Municipios</th>
-                        <th style="width: 300px">Acciones</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach (var estado in estados!)
-                    {
-                        <tr>
-                            <td>
-                                @estado.Nombre
-                            </td>
-                            <td>
-                                @estado.CantidadMunicipios
-                            </td>
-                            <td>
-                                <a class="btn btn-info" href="/estados/detalles/@estado.Id">Detalles</a>
-                                <a class="btn btn-warning" href="/estados/editar/@estado.Id">Editar</a>
-                                <button class="btn btn-danger" @onclick="(() => EliminarEstadoAsync(estado.Id))">Eliminar</button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </Body>
-    </ListaGenerica>
+    </div>*@
 }
 
 @code {

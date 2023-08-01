@@ -6,11 +6,66 @@
 
 @if(estado is null)
 {
-    <p>Cargando...</p>
+    <div class="spinner"/>
 }
 else
 {
-    <h3>Municipios de @estado.Nombre</h3>
+    <div class="card">
+        <div class="card-header">
+            <span>
+                <i class="oi oi-globe"></i>&nbsp;Municipios de @estado.Nombre
+                <a class="btn btn-sm btn-primary me-2 float-end" href="/municipios/crear/@estado.Id"><i class="oi oi-plus"></i>&nbsp;Nuevo Municipio</a>
+                <a class="btn btn-sm btn-success me-2 float-end" href="/paises/detalles/@estado.PaisId"><i class="oi oi-chevron-left"></i>&nbsp;Regresar</a>
+            </span>
+        </div>
+
+        <div class="card-body">
+            <div class="mb-2" style="display:flex; flex-wrap: wrap; align-items:center;">
+                <div>
+                    <input type="text" style="width:400px" class="form-control" id="titulo" placeholder="Buscar Municipio..." @bind-value="Filter" />
+                </div>
+
+                <div class="mx-2">
+                    <button type="button" class="btn btn-outline-primary" @onclick="AplicarFiltroAsync"><i class="oi oi-layers" />&nbsp;Filtrar</button>
+                    <button type="button" class="btn btn-outline-danger" @onclick="LimpiarFiltroAsync"><i class="oi oi-grid-three-up" />&nbsp;Limpiar</button>
+                </div>
+            </div>
+
+            <Paginacion PaginaActual="currentPage" TotalPaginas="totalPages" SeleccionarPagina="SelectedPageAsync" />
+
+            <ListaGenerica MiLista="municipios">
+                <Body>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 940px">Municipio</th>
+                                <th style="width: 300px">Acciones</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var municipio in municipios!)
+                            {
+                                <tr>
+                                    <td>
+                                        @municipio.Nombre
+                                    </td>
+                                    <td>
+                                        <a class="btn btn-warning btn-sm" href="/municipios/editar/@municipio.Id"><i class="oi oi-pencil" />&nbsp;Editar</a>
+                                        <button class="btn btn-danger btn-sm" @onclick="(() => EliminarMunicipioAsync(municipio.Id))"><i class="oi oi-trash" />&nbsp;Eliminar</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </Body>
+            </ListaGenerica>
+        </div>
+    </div>
+
+    @*=====================================================================================================================================================================*@
+
+    @*<h3>Municipios de @estado.Nombre</h3>
 
     <div class="mb-2" style="display:flex; flex-wrap: wrap; align-items:center;">
         <div>
@@ -26,38 +81,7 @@ else
             <button type="button" class="btn btn-outline-primary" @onclick="AplicarFiltroAsync">Filtrar</button>
             <button type="button" class="btn btn-outline-danger" @onclick="LimpiarFiltroAsync">Limpiar</button>
         </div>
-    </div>
-
-    <Paginacion PaginaActual="currentPage" TotalPaginas="totalPages" SeleccionarPagina="SelectedPageAsync" />
-    @*<Paginacion CurrentPage="currentPage" TotalPages="totalPages" SelectedPage="SelectedPageAsync"/>*@
-
-    <ListaGenerica MiLista="municipios">
-        <Body>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Municipio</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach (var municipio in municipios!)
-                    {
-                        <tr>
-                            <td>
-                                @municipio.Nombre
-                            </td>
-                            <td>
-                                <a class="btn btn-warning" href="/municipios/editar/@municipio.Id">Editar</a>
-                                <button class="btn btn-danger" @onclick="(() => EliminarMunicipioAsync(municipio.Id))">Eliminar</button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </Body>
-    </ListaGenerica>
+    </div>*@
 }
 
 @code {
