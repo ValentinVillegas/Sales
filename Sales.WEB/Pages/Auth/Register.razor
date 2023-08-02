@@ -108,13 +108,6 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label>Foto:</label>
-                        <div>
-                            <InputText class="form-control" @bind-Value="@userDTO.Foto" />
-                            <ValidationMessage For="@(() => userDTO.Foto)" />
-                        </div>
-                    </div>
-                    <div class="mb-3">
                         <label>Contraseña:</label>
                         <div>
                             <InputText type="password" class="form-control" @bind-Value="@userDTO.Password" />
@@ -128,6 +121,9 @@
                             <ValidationMessage For="@(() => userDTO.PasswordConfirm)" />
                         </div>
                     </div>
+                    <div class="mb-3">
+                        <InputImg Label="Foto" ImagenSeleccionada="ImagenSeleccionada" ImageURL="@imageUrl" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -139,10 +135,17 @@
     private List<Pais>? paises;
     private List<Estado>? estados;
     private List<Municipio>? municipios;
+    private string? imageUrl;
 
     protected override async Task OnInitializedAsync()
     {
         await CargarPaisesAsync();
+
+        if (!string.IsNullOrEmpty(userDTO.Foto))
+        {
+            imageUrl = userDTO.Foto;
+            userDTO.Foto = null;
+        }
     }
 
     private async Task CargarPaisesAsync()
@@ -203,5 +206,11 @@
 
         await loginService.LoginAsync(responseHttp.Response!.Token);
         navigationManager.NavigateTo("/");
+    }
+
+    private void ImagenSeleccionada(string imgBase64)
+    {
+        userDTO.Foto = imgBase64;
+        imageUrl = null;
     }
 }

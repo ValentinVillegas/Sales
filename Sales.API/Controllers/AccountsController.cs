@@ -15,17 +15,28 @@ namespace Sales.API.Controllers
     {
         private readonly IUserHelper _userHerlper;
         private readonly IConfiguration _configuration;
+        private readonly IFileStorage _fileStorage;
+        private readonly string _contenedor;
 
-        public AccountsController(IUserHelper userHerlper, IConfiguration configuration)
+        public AccountsController(IUserHelper userHerlper, IConfiguration configuration, IFileStorage fileStorage)
         {
             _userHerlper = userHerlper;
             _configuration = configuration;
+            _fileStorage = fileStorage;
+            _contenedor = "users"; //Contenedor de AzureStorage
         }
 
         [HttpPost("CrearUsuario")]
         public async Task<ActionResult> CrearUsuario([FromBody] UserDTO model)
         {
             Usuario user = model;
+
+            if (!string.IsNullOrEmpty(model.Foto))
+            {
+                var fotoUsuario = Convert.FromBase64String(model.Foto);
+                model.Foto = await _fileStorage.SaveFileAsync(fotoUsuario, ".jpg", _contenedor);
+            }
+
             var result = await _userHerlper.AddUserAsync(user, model.Password);
 
             if (result.Succeeded)
