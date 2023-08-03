@@ -13,5 +13,8 @@ namespace Sales.API.Helpers
         Task<bool> IsUserInRoleAsync(Usuario usuario, string reoleName);
         Task<SignInResult> LoginAsync(LoginDTO model);
         Task LogoutAsync();
+        Task<IdentityResult> ChangePasswordAsync(Usuario user, string currentPassword, string newPassword);
+        Task<IdentityResult> UpdateUserAsync(Usuario user);
+        Task<Usuario> GetUserAsync(Guid userId);
     }
 }

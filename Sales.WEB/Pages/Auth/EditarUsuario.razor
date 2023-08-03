@@ -1,0 +1,242 @@
+﻿@page "/EditarUsuario"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService sweetAlertService
+
+@if(usuario is null)
+{
+    <div class="spinner"/>
+}
+else
+{
+    <EditForm Model="usuario" OnValidSubmit="GuardarUsuarioAsync">
+        <DataAnnotationsValidator/>
+
+        <div class="card">
+            <div class="card-header">
+                <span>
+                    <i class="oi oi-person"/> Editar Usuario
+                    <a class="btn btn-sm btn-secondary float-end" href="/cambiarPassword"><i class="oi oi-key" /> Cambiar Contraseña</a>
+                    <button class="btn btn-sm btn-primary float-end mx-2" type="submit"><i class="oi oi-check" /> Guardar Cambios</button>
+                </span>
+            </div>
+
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <label>Nombres:</label>
+                            <div>
+                                <InputText class="form-control" @bind-Value="@usuario.Nombre"/>
+                                <ValidationMessage For="(() => usuario.Nombre)"/>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Apellidos:</label>
+                            <div>
+                                <InputText class="form-control" @bind-Value="@usuario.Apellido" />
+                                <ValidationMessage For="(() => usuario.Apellido)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Documento:</label>
+                            <div>
+                                <InputText class="form-control" @bind-Value="@usuario.Documento" />
+                                <ValidationMessage For="(() => usuario.Documento)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Teléfono:</label>
+                            <div>
+                                <InputText class="form-control" @bind-Value="@usuario.PhoneNumber" />
+                                <ValidationMessage For="(() => usuario.PhoneNumber)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Dirección:</label>
+                            <div>
+                                <InputText class="form-control" @bind-Value="@usuario.Direccion" />
+                                <ValidationMessage For="(() => usuario.Direccion)" />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-6">
+                        <div class="mb-3">
+                            <label>País:</label>
+                            <div>
+                                <select class="form-select" @onchange="PaisChangedAsync">
+                                    <option value="0">-- Seleccione un país --</option>
+                                    @if(paises is not null)
+                                    {
+                                        @foreach(var pais in paises){
+                                            <option value="@pais.Id" selected="@(pais.Id == usuario.Municipio!.Estado!.Pais!.Id)">@pais.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Estado:</label>
+                            <div>
+                                <select class="form-select" @onchange="EstadoChangedAsync">
+                                    <option value="0">-- Seleccione un estado --</option>
+                                    @if (estados is not null)
+                                    {
+                                        @foreach (var estado in estados)
+                                        {
+                                            <option value="@estado.Id" selected="@(estado.Id == usuario.Municipio!.Estado!.Id)">@estado.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Municipio:</label>
+                            <div>
+                                <select class="form-select" @bind="@usuario.MunicipioId">
+                                    <option value="0">-- Seleccione un municipio --</option>
+                                    @if (municipios is not null)
+                                    {
+                                        @foreach (var municipio in municipios)
+                                        {
+                                            <option value="@municipio.Id" selected="@(municipio.Id == usuario.Municipio!.Id)">@municipio.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                                <ValidationMessage For="(() => usuario.MunicipioId)"/>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <InputImg Label="Foto" ImagenSeleccionada="ImagenSeleccionada" ImageURL="@imageUrl" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+
+@code {
+    private Usuario? usuario;
+    private List<Pais>? paises;
+    private List<Estado>? estados;
+    private List<Municipio>? municipios;
+    private string? imageUrl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarUsuarioAsync();
+        await CargarPaisesAsync();
+        await CargarEstadosAsync(usuario!.Municipio!.Estado!.Pais!.Id);
+        await CargarMunicipiosAsync(usuario.Municipio.Estado.Id);
+
+        if (!string.IsNullOrEmpty(usuario.Foto))
+        {
+            imageUrl = usuario.Foto;
+            usuario.Foto = null;
+        }
+    }
+
+    private async Task CargarUsuarioAsync()
+    {
+        var responseHttp = await repository.Get<Usuario>("/api/accounts");
+
+        if (responseHttp.Error)
+        {
+            if(responseHttp.HttpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/");
+                return;
+            }
+
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        usuario = responseHttp.Response;
+    }
+
+    private void ImagenSeleccionada(string imgBase64)
+    {
+        usuario!.Foto = imgBase64;
+        imageUrl = null;
+
+    }
+
+    private async Task CargarPaisesAsync()
+    {
+        var responseHttp = await repository.Get<List<Pais>>("/api/paises/combo");
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        paises = responseHttp.Response;
+    }
+
+    private async Task PaisChangedAsync(ChangeEventArgs e)
+    {
+        var paisSelec = Convert.ToInt32(e.Value);
+        await CargarEstadosAsync(paisSelec);
+    }
+
+    private async Task EstadoChangedAsync(ChangeEventArgs e)
+    {
+        var estadoSelec = Convert.ToInt32(e.Value);
+        await CargarMunicipiosAsync(estadoSelec);
+    }
+
+    private async Task CargarEstadosAsync(int paisId)
+    {
+        var responseHttp = await repository.Get<List<Estado>>($"/api/estados/combo/{paisId}");
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        estados = responseHttp.Response;
+    }
+
+    private async Task CargarMunicipiosAsync(int estadoId)
+    {
+        var responseHttp = await repository.Get<List<Municipio>>($"/api/municipios/combo/{estadoId}");
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        municipios = responseHttp.Response;
+    }
+
+    private async Task GuardarUsuarioAsync()
+    {
+        var responseHttp = await repository.Put<Usuario>("/api/accounts", usuario!);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        navigationManager.NavigateTo("/");
+    }
+}

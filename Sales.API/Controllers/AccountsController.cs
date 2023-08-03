@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Sales.API.Helpers;
 using Sales.Shared.DTOs;
@@ -13,17 +15,24 @@ namespace Sales.API.Controllers
     [Route("/api/accounts")]
     public class AccountsController:ControllerBase
     {
-        private readonly IUserHelper _userHerlper;
+        private readonly IUserHelper _userHelper;
         private readonly IConfiguration _configuration;
         private readonly IFileStorage _fileStorage;
         private readonly string _contenedor;
 
         public AccountsController(IUserHelper userHerlper, IConfiguration configuration, IFileStorage fileStorage)
         {
-            _userHerlper = userHerlper;
+            _userHelper = userHerlper;
             _configuration = configuration;
             _fileStorage = fileStorage;
             _contenedor = "users"; //Contenedor de AzureStorage
+        }
+
+        [HttpGet]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ActionResult> GetAsync()
+        {
+            return Ok(await _userHelper.GetUserAsync(User.Identity!.Name!));
         }
 
         [HttpPost("CrearUsuario")]
@@ -37,11 +46,11 @@ namespace Sales.API.Controllers
                 model.Foto = await _fileStorage.SaveFileAsync(fotoUsuario, ".jpg", _contenedor);
             }
 
-            var result = await _userHerlper.AddUserAsync(user, model.Password);
+            var result = await _userHelper.AddUserAsync(user, model.Password);
 
             if (result.Succeeded)
             {
-                await _userHerlper.AddUserToRoleAsync(user, user.TipoUsuario.ToString());
+                await _userHelper.AddUserToRoleAsync(user, user.TipoUsuario.ToString());
                 return Ok(BuildToken(user));
             }
 
@@ -51,15 +60,51 @@ namespace Sales.API.Controllers
         [HttpPost("Login")]
         public async Task<ActionResult> Login([FromBody] LoginDTO model)
         {
-            var result = await _userHerlper.LoginAsync(model);
+            var result = await _userHelper.LoginAsync(model);
 
             if (result.Succeeded)
             {
-                var user = await _userHerlper.GetUserAsync(model.Email);
+                var user = await _userHelper.GetUserAsync(model.Email);
                 return Ok(BuildToken(user));
             }
 
             return BadRequest("Correo electrónico incorrecto");
+        }
+
+        [HttpPut]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ActionResult> PutAsync(Usuario user)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(user.Foto))
+                {
+                    var fotoUsuario = Convert.FromBase64String(user.Foto);
+                    user.Foto = await _fileStorage.SaveFileAsync(fotoUsuario, ".jpg", _contenedor);
+                }
+
+                var currentUser = await _userHelper.GetUserAsync(user.Email!);
+
+                if (currentUser is null) return NotFound();
+
+                currentUser.Documento = user.Documento;
+                currentUser.Nombre = user.Nombre;
+                currentUser.Apellido = user.Apellido;
+                currentUser.Direccion = user.Direccion;
+                currentUser.PhoneNumber = user.PhoneNumber;
+                currentUser.Foto = !string.IsNullOrEmpty(user.Foto) && user.Foto != currentUser.Foto ? user.Foto : currentUser.Foto;
+                currentUser.MunicipioId = user.MunicipioId;
+
+                var result = await _userHelper.UpdateUserAsync(currentUser);
+
+                if(result.Succeeded) return NoContent();
+
+                return BadRequest(result.Errors.FirstOrDefault());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         private TokenDTO BuildToken(Usuario user)

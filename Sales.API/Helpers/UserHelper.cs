@@ -47,6 +47,22 @@ namespace Sales.API.Helpers
             return user! ;
         }
 
+        public async Task<Usuario> GetUserAsync(Guid userId)
+        {
+            var user = await _context.Users.Include(u => u.Municipio).ThenInclude(m => m!.Estado).ThenInclude(e => e.Pais).FirstOrDefaultAsync(u => u.Id == userId.ToString());
+            return user!;
+        }
+
+        public async Task<IdentityResult> ChangePasswordAsync(Usuario user, string currentPassword, string newPassword)
+        {
+            return await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        }
+
+        public async Task<IdentityResult> UpdateUserAsync(Usuario user)
+        {
+            return await _userManager.UpdateAsync(user);
+        }
+
         public async Task<bool> IsUserInRoleAsync(Usuario usuario, string reoleName)
         {
             return await _userManager.IsInRoleAsync(usuario, reoleName);
