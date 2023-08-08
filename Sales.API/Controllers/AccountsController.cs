@@ -71,6 +71,23 @@ namespace Sales.API.Controllers
             return BadRequest("Correo electrónico incorrecto");
         }
 
+        [HttpPost("CambiarPassword")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ActionResult> CambiarPasswordAsync(ChangePasswordDTO model)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var user = await _userHelper.GetUserAsync(User.Identity!.Name!);
+
+            if (user is null) return NotFound();
+
+            var result = await _userHelper.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+
+            if(!result.Succeeded) return BadRequest(result.Errors.FirstOrDefault()!.Description);
+
+            return NoContent();
+        }
+
         [HttpPut]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult> PutAsync(Usuario user)
