@@ -246,6 +246,10 @@ namespace Sales.API.Data
 
             if (user is null)
             {
+                var municipio = await _context.Municipios.FirstOrDefaultAsync(x => x.Nombre == "Medellín");
+
+                if (municipio is null) municipio = await _context.Municipios.FirstOrDefaultAsync();
+
                 user = new Usuario { 
                     Nombre = nombres,
                     Apellido = apellidos,
@@ -254,7 +258,8 @@ namespace Sales.API.Data
                     PhoneNumber = telefono,
                     Direccion = direccion,
                     Documento = documento,
-                    Municipio = _context.Municipios.FirstOrDefault(),
+                    //Municipio = _context.Municipios.FirstOrDefault(),
+                    Municipio = municipio,
                     TipoUsuario = userType,
                 };
 

@@ -196,7 +196,8 @@
     {
         userDTO.UserName = userDTO.Email;
         userDTO.TipoUsuario = UserType.User;
-        var responseHttp = await repository.Post<UserDTO, TokenDTO>("/api/accounts/CrearUsuario", userDTO);
+        //var responseHttp = await repository.Post<UserDTO, TokenDTO>("/api/accounts/CrearUsuario", userDTO);
+        var responseHttp = await repository.Post<UserDTO>("/api/accounts/CrearUsuario", userDTO);
         if (responseHttp.Error)
         {
             var message = await responseHttp.GetErrorMessageAsync();
@@ -204,7 +205,8 @@
             return;
         }
 
-        await loginService.LoginAsync(responseHttp.Response!.Token);
+        //await loginService.LoginAsync(responseHttp.Response!.Token);
+        await sweetAlertService.FireAsync("Confirmación", "Su cuenta ha sido creada con éxito. Se le enviará un correo electrónico con las instrucciones a seguir para activar su usuario.", SweetAlertIcon.Info);
         navigationManager.NavigateTo("/");
     }
 

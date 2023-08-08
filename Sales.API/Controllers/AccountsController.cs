@@ -18,13 +18,15 @@ namespace Sales.API.Controllers
         private readonly IUserHelper _userHelper;
         private readonly IConfiguration _configuration;
         private readonly IFileStorage _fileStorage;
+        private readonly IMailHelper _mailHelper;
         private readonly string _contenedor;
 
-        public AccountsController(IUserHelper userHerlper, IConfiguration configuration, IFileStorage fileStorage)
+        public AccountsController(IUserHelper userHerlper, IConfiguration configuration, IFileStorage fileStorage, IMailHelper mailHelper)
         {
             _userHelper = userHerlper;
             _configuration = configuration;
             _fileStorage = fileStorage;
+            _mailHelper = mailHelper;
             _contenedor = "users"; //Contenedor de AzureStorage
         }
 
@@ -51,10 +53,34 @@ namespace Sales.API.Controllers
             if (result.Succeeded)
             {
                 await _userHelper.AddUserToRoleAsync(user, user.TipoUsuario.ToString());
-                return Ok(BuildToken(user));
+                var mytoken = await _userHelper.GenerateEmailConfirmationTokenAsync(user);
+                var tokenLink = Url.Action("ConfirmarEmail", "accounts", new {userId = user.Id, token = mytoken}, HttpContext.Request.Scheme, _configuration["UrlWeb"]);
+
+                var response = _mailHelper.SendMail(user.NombreCompleto, user.Email!, 
+                    $"Sales - Confimación de cuenta",
+                    $"<h1>Sales - Confirmación de cuenta</h1>" + $"<p>Para habilitar el usuario, por favor hacer clic en 'Confirmar Email': </p>" + $"<b><a href = {tokenLink}>Confirmar Email</a></b>");
+
+                if(response.IsSucces) return NoContent();
+
+                return BadRequest(response.Message);
             }
 
             return BadRequest(result.Errors.FirstOrDefault());
+        }
+
+        [HttpGet("ConfirmarEmail")]
+        public async Task<ActionResult> ConfirmarEmailAsync(string userId, string token)
+        {
+            token = token.Replace(" ", "+");
+            var user = await _userHelper.GetUserAsync(new Guid(userId));
+
+            if (user is null) return NotFound();
+
+            var result = await _userHelper.ConfirmEmailAsync(user, token);
+
+            if (!result.Succeeded) return BadRequest(result.Errors.FirstOrDefault());   
+
+            return NoContent();
         }
 
         [HttpPost("Login")]
@@ -68,7 +94,17 @@ namespace Sales.API.Controllers
                 return Ok(BuildToken(user));
             }
 
-            return BadRequest("Correo electrónico incorrecto");
+            if (result.IsLockedOut)
+            {
+                return BadRequest("Se ha superado el número máximo de intentos, la cuenta ha sido bloqueada, intente de nuevo en 5 minutos");
+            }
+
+            if (result.IsNotAllowed)
+            {
+                return BadRequest("El usuario no ha sido habilitado, asegurese de seguir las instrucciones enviadas a su correo para habilitar su usuario");
+            }
+
+            return BadRequest("Email o contraseña incorrecta");
         }
 
         [HttpPost("CambiarPassword")]
