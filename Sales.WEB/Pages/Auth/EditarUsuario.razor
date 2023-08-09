@@ -1,5 +1,6 @@
 ﻿@page "/EditarUsuario"
 @inject IRepository repository
+@inject ILoginService loginService
 @inject NavigationManager navigationManager
 @inject SweetAlertService sweetAlertService
 
@@ -228,7 +229,7 @@ else
 
     private async Task GuardarUsuarioAsync()
     {
-        var responseHttp = await repository.Put<Usuario>("/api/accounts", usuario!);
+        var responseHttp = await repository.Put<Usuario, TokenDTO>("/api/accounts", usuario!);
 
         if (responseHttp.Error)
         {
@@ -237,6 +238,7 @@ else
             return;
         }
 
+        await loginService.LoginAsync(responseHttp.Response!.Token);
         navigationManager.NavigateTo("/");
     }
 }

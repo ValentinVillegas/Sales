@@ -54,11 +54,17 @@ namespace Sales.API.Controllers
             {
                 await _userHelper.AddUserToRoleAsync(user, user.TipoUsuario.ToString());
                 var mytoken = await _userHelper.GenerateEmailConfirmationTokenAsync(user);
-                var tokenLink = Url.Action("ConfirmarEmail", "accounts", new {userId = user.Id, token = mytoken}, HttpContext.Request.Scheme, _configuration["UrlWeb"]);
+                var tokenLink = Url.Action("ConfirmarEmail", "accounts", new 
+                {
+                    userid = user.Id,
+                    token = mytoken
+                }, HttpContext.Request.Scheme, _configuration["UrlWeb"]);
 
                 var response = _mailHelper.SendMail(user.NombreCompleto, user.Email!, 
                     $"Sales - Confimación de cuenta",
-                    $"<h1>Sales - Confirmación de cuenta</h1>" + $"<p>Para habilitar el usuario, por favor hacer clic en 'Confirmar Email': </p>" + $"<b><a href = {tokenLink}>Confirmar Email</a></b>");
+                    $"<h1>Sales - Confirmación de cuenta</h1>" + 
+                    $"<p>Para habilitar el usuario, por favor hacer clic en 'Confirmar Email': </p>" + 
+                    $"<b><a href ={tokenLink}>Confirmar Email</a></b>");
 
                 if(response.IsSucces) return NoContent();
 
@@ -171,7 +177,7 @@ namespace Sales.API.Controllers
 
                 var result = await _userHelper.UpdateUserAsync(currentUser);
 
-                if(result.Succeeded) return NoContent();
+                if(result.Succeeded) return Ok(BuildToken(currentUser));
 
                 return BadRequest(result.Errors.FirstOrDefault());
             }
