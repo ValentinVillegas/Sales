@@ -196,6 +196,7 @@
     {
         userDTO.UserName = userDTO.Email;
         userDTO.TipoUsuario = UserType.User;
+        //userDTO.TipoUsuario = UserType.Admin;
         //var responseHttp = await repository.Post<UserDTO, TokenDTO>("/api/accounts/CrearUsuario", userDTO);
         var responseHttp = await repository.Post<UserDTO>("/api/accounts/CrearUsuario", userDTO);
         if (responseHttp.Error)
