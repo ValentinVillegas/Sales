@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Bcpg;
 using Sales.API.Helpers;
 using Sales.Shared.DTOs;
 using Sales.Shared.Entidades;
@@ -218,5 +219,42 @@ namespace Sales.API.Controllers
             };
         }
 
+        [HttpPost("RecuperarPassword")]
+        public async Task<ActionResult> RecuperarPassword([FromBody] EmailDTO model)
+        {
+            Usuario user = await _userHelper.GetUserAsync(model.Email);
+
+            if (user is null) return NotFound();
+
+            var myToken = await _userHelper.GeneratePasswordResetTokenAsync(user);
+            var tokenLink = Url.Action("ReestablecerPassword", "accounts", new
+            {
+                userid = user.Id,
+                token = myToken
+            }, HttpContext.Request.Scheme, _configuration["UrlWeb"]);
+
+            var response = _mailHelper.SendMail(user.NombreCompleto, user.Email!, "Sales - Recuperaión de contraseña",
+                $"<h1>Sales - Recuperación de contraseña</h1>" +
+                $"<p>Para recuperar su contraseña haga clic en 'Recuperar contraseña'</p>"+
+                $"<b><a href = {tokenLink}>Recuperar contraseña</a></b>");
+
+            if (response.IsSucces) return NoContent();
+
+            return BadRequest(response.Message);
+        }
+
+        [HttpPost("ReestablecerPassword")]
+        public async Task<ActionResult> ReestablecerPassword([FromBody] RecuperarPasswordDTO model)
+        {
+            Usuario user = await _userHelper.GetUserAsync (model.Email);
+
+            if (user is null) return NotFound();
+
+            var result = await _userHelper.ResetPasswordAsync(user, model.Token, model.Password);
+
+            if(result.Succeeded) return NoContent();
+
+            return BadRequest(result.Errors.FirstOrDefault()!.Description);
+        }
     }
 }

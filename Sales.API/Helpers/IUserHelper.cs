@@ -18,5 +18,7 @@ namespace Sales.API.Helpers
         Task<Usuario> GetUserAsync(Guid userId);
         Task<string> GenerateEmailConfirmationTokenAsync(Usuario user);
         Task<IdentityResult> ConfirmEmailAsync(Usuario user, string token);
+        Task<string> GeneratePasswordResetTokenAsync(Usuario user);
+        Task<IdentityResult> ResetPasswordAsync(Usuario user, string token, string password);
     }
 }
