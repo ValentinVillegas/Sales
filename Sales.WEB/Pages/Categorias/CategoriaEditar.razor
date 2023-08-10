@@ -1,4 +1,4 @@
-﻿@page "/categorias/editar/{Id:int}"
+﻿@page "/categorias/editar/{CategoriaId:int}"
 @inject IRepository repository
 @inject NavigationManager navigationManager
 @inject SweetAlertService sweetAlertService
@@ -19,12 +19,15 @@ else
     private Categoria categoria;
     private CategoriaForm categoriaForm;
 
+    [CascadingParameter]
+    public BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
     [Parameter]
-    public int Id { get; set; }
+    public int CategoriaId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var responseHTTP = await repository.Get<Categoria>($"/api/categorias/{Id}");
+        var responseHTTP = await repository.Get<Categoria>($"/api/categorias/{CategoriaId}");
 
         if (responseHTTP.Error)
         {
@@ -52,6 +55,8 @@ else
             await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
             return;
         }
+
+        await BlazoredModal.CloseAsync(ModalResult.Ok());
 
         Regresar();
     }

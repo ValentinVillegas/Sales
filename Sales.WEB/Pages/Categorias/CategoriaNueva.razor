@@ -12,6 +12,9 @@
     private Categoria categoria = new();
     private CategoriaForm categoriaForm;
 
+    [CascadingParameter]
+    public BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
     private async Task Crear()
     {
         var HTTPresponse = await repository.Post("/api/categorias", categoria);
@@ -22,6 +25,8 @@
             await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
             return;
         }
+
+        await BlazoredModal.CloseAsync(ModalResult.Ok());
 
         Regresar();
     }

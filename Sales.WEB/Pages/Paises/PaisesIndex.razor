@@ -14,7 +14,7 @@ else
     <div class="card">
         <div class="card-header">
             <span>
-                <i class="oi oi-globe"></i>&nbsp;Paises<a class="btn btn-sm btn-primary float-end" href="/paises/crear"><i class="oi oi-plus"></i>&nbsp;Agregar País
+                <i class="oi oi-globe"></i>&nbsp;Paises<a class="btn btn-sm btn-primary float-end" @onclick="@(() => ShowModal())"><i class="oi oi-plus"></i>&nbsp;Agregar País
                 </a>
             </span>
         </div>
@@ -58,7 +58,7 @@ else
                                     </td>
                                     <td>
                                         <a class="btn btn-info btn-sm" href="/paises/detalles/@p.Id"><i class="oi oi-list"/>&nbsp;Detalles</a>
-                                        <a class="btn btn-warning btn-sm" href="/paises/editar/@p.Id"><i class="oi oi-pencil"/>&nbsp;Editar</a>
+                                        <a class="btn btn-warning btn-sm" @onclick="@(() => ShowModal(p.Id, true))"><i class="oi oi-pencil"/>&nbsp;Editar</a>
                                         <button class="btn btn-danger btn-sm" @onclick="(() => EliminarPaisAsync(p.Id))"><i class="oi oi-trash"/>&nbsp;Eliminar</button>
                                     </td>
                                 </tr>
@@ -74,6 +74,9 @@ else
 @code {
     private int currentPage = 1;
     private int totalPages;
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; } = default!;
 
     [Parameter]
     [SupplyParameterFromQuery]
@@ -167,5 +170,26 @@ else
     {
         Filter = string.Empty;
         await AplicarFiltroAsync();
+    }
+
+    private async Task ShowModal(int id = 0, bool isEdit = false)
+    {
+        IModalReference modalReference;
+
+        if (isEdit)
+        {
+            modalReference = Modal.Show<PaisEditar>(string.Empty, new ModalParameters().Add("Id", id));
+        }
+        else
+        {
+            modalReference = Modal.Show<PaisNuevo>();
+        }
+
+        var result = await modalReference.Result;
+
+        if (result.Confirmed)
+        {
+            await LoadAsync();
+        }
     }
 }

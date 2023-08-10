@@ -14,7 +14,7 @@ else
         <div class="card-header">
             <span>
                 <i class="oi oi-globe"></i>&nbsp;Municipios de @estado.Nombre
-                <a class="btn btn-sm btn-primary me-2 float-end" href="/municipios/crear/@estado.Id"><i class="oi oi-plus"></i>&nbsp;Nuevo Municipio</a>
+                <a class="btn btn-sm btn-primary me-2 float-end" @onclick="@(() => ShowModal(estado.Id, false))"><i class="oi oi-plus"></i>&nbsp;Nuevo Municipio</a>
                 <a class="btn btn-sm btn-success me-2 float-end" href="/paises/detalles/@estado.PaisId"><i class="oi oi-chevron-left"></i>&nbsp;Regresar</a>
             </span>
         </div>
@@ -51,7 +51,7 @@ else
                                         @municipio.Nombre
                                     </td>
                                     <td>
-                                        <a class="btn btn-warning btn-sm" href="/municipios/editar/@municipio.Id"><i class="oi oi-pencil" />&nbsp;Editar</a>
+                                        <a class="btn btn-warning btn-sm" @onclick="@(() => ShowModal(municipio.Id, true))"><i class="oi oi-pencil" />&nbsp;Editar</a>
                                         <button class="btn btn-danger btn-sm" @onclick="(() => EliminarMunicipioAsync(municipio.Id))"><i class="oi oi-trash" />&nbsp;Eliminar</button>
                                     </td>
                                 </tr>
@@ -89,6 +89,9 @@ else
     private List<Municipio>? municipios;
     private int currentPage = 1;
     private int totalPages;
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; } = default!;
 
     [Parameter]
     public int EstadoId { get; set; }
@@ -195,5 +198,26 @@ else
     {
         Filter = string.Empty;
         await AplicarFiltroAsync();
+    }
+
+    private async Task ShowModal(int id = 0, bool isEdit = false)
+    {
+        IModalReference modalReference;
+
+        if (isEdit)
+        {
+            modalReference = Modal.Show<Municipios.MunicipioEditar>(string.Empty, new ModalParameters().Add("MunicipioId", id));
+        }
+        else
+        {
+            modalReference = Modal.Show<Municipios.MunicipioNuevo>(string.Empty, new ModalParameters().Add("EstadoId", id));
+        }
+
+        var result = await modalReference.Result;
+
+        if (result.Confirmed)
+        {
+            await LoadAsync();
+        }
     }
 }

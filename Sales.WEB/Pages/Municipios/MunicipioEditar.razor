@@ -19,6 +19,9 @@ else
     Municipio? municipio;
     MunicipioForm? municipioForm;
 
+    [CascadingParameter]
+    public BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
     [Parameter]
     public int MunicipioId { get; set; }
 
@@ -52,6 +55,8 @@ else
             await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
             return;
         }
+
+        await BlazoredModal.CloseAsync(ModalResult.Ok());
 
         Regresar();
     }

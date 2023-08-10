@@ -19,6 +19,9 @@ else
     private Pais pais;
     private PaisForm paisForm;
 
+    [CascadingParameter]
+    public BlazoredModalInstance BlazoredModal { get; set; } = default!;
+
     [Parameter]
     public int Id { get; set; }
 
@@ -52,6 +55,8 @@ else
             await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
             return;
         }
+
+        await BlazoredModal.CloseAsync(ModalResult.Ok());
 
         Regresar();
     }
