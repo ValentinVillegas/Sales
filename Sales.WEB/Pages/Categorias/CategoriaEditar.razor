@@ -1,0 +1,64 @@
+﻿@page "/categorias/editar/{Id:int}"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService sweetAlertService
+@attribute [Authorize(Roles = "Admin")]
+
+<h3>Editar Categoría</h3>
+
+@if (categoria is null)
+{
+    <div class="spinner" />
+}
+else
+{
+    <CategoriaForm @ref="categoriaForm" Categoria="categoria" OnValidSubmit="EditarAsync" ReturnAction="Regresar"></CategoriaForm>
+}
+
+@code {
+    private Categoria categoria;
+    private CategoriaForm categoriaForm;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var responseHTTP = await repository.Get<Categoria>($"/api/categorias/{Id}");
+
+        if (responseHTTP.Error)
+        {
+            if (responseHTTP.HttpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/categorias");
+                return;
+            }
+
+            var message = await responseHTTP.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        categoria = responseHTTP.Response!;
+    }
+
+    private async Task EditarAsync()
+    {
+        var responseHttp = await repository.Put("/api/categorias", categoria);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        Regresar();
+    }
+
+    private void Regresar()
+    {
+        categoriaForm.formularioEnviado = true;
+        navigationManager.NavigateTo("/categorias");
+    }
+}

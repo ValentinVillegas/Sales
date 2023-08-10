@@ -1,0 +1,34 @@
+﻿@page "/categorias/crear"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService sweetAlertService
+@attribute [Authorize(Roles = "Admin")]
+
+<h3>Crear Categoría</h3>
+
+<CategoriaForm @ref="categoriaForm" Categoria="categoria" OnValidSubmit="Crear" ReturnAction="Regresar" />
+
+@code {
+    private Categoria categoria = new();
+    private CategoriaForm categoriaForm;
+
+    private async Task Crear()
+    {
+        var HTTPresponse = await repository.Post("/api/categorias", categoria);
+
+        if (HTTPresponse.Error)
+        {
+            var message = await HTTPresponse.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        Regresar();
+    }
+
+    private void Regresar()
+    {
+        categoriaForm.formularioEnviado = true;
+        navigationManager.NavigateTo("/categorias");
+    }
+}
