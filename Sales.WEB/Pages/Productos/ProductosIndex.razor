@@ -1,0 +1,211 @@
+﻿@page "/productos"
+@inject IRepository repository
+@inject SweetAlertService sweetAlertService
+@inject NavigationManager navigationManager
+@attribute [Authorize(Roles = "Admin")]
+
+@if(Productos is null)
+{
+    <div class="spinner"/>
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <span>
+                <i class="oi oi-star"/> Productos
+                <a class="btn btn-sm btn-primary float-end" href="/productos/crear"><i class="oi oi-plus"/>&nbsp;Nuevo Producto</a>
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="mb-2" style="display: flex; flex-wrap:wrap; align-items: center;">
+                <div>
+                    <input style="width: 400px;" type="text" class="form-control" id="titulo" placeholder="Buscar producto..." @bind-value="Filter" />
+                </div>
+                <div class="mx-1">
+                    <button type="button" class="btn btn-outline-primary" @onclick="AplicarFiltroAsync"><i class="oi oi-layers" />&nbsp;Filtrar</button>
+                    <button type="button" class="btn btn-outline-danger" @onclick="LimpiarFiltroAsync"><i class="oi oi-ban" />&nbsp;Limpiar</button>
+                </div>
+            </div>
+
+            <Paginacion PaginaActual="currentPage" TotalPaginas="totalPages" SeleccionarPagina="SelectedPageAsync" />
+
+            <ListaGenerica MiLista="Productos">
+                <Body>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Precio</th>
+                                <th>Inventario</th>
+                                <th>Categorías</th>
+                                <th>Imagenes</th>
+                                <th>Imagen Principal</th>
+                                <th style="width:200px"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var producto in Productos)
+                            {
+                                <tr>
+                                    <td>
+                                        @producto.Nombre
+                                    </td>
+                                    <td>
+                                        @producto.Descripcion
+                                    </td>
+                                    <td>
+                                        @($"{producto.Precio:C2}")
+                                    </td>
+                                    <td>
+                                        @($"{producto.Stock:N2}")
+                                    </td>
+                                    <td>
+                                        @producto.CantidadCategoriasProducto
+                                    </td>
+                                    <td>
+                                        @producto.CantidadImagenesProducto
+                                    </td>
+                                    <td>
+                                        <img src="@producto.ImagenPrincipal" style="width:100px;"/>
+                                    </td>
+                                    <td>
+                                        <a href="/productos/editar/@producto.Id" class="btn btn-warning"><i class="oi oi-pencil" />&nbsp;Editar</a>
+                                        <button class="btn btn-danger" @onclick=@(() => EliminarProductoAsync(producto.Id))><i class="oi oi-trash" />&nbsp;Eliminar</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </Body>
+            </ListaGenerica>
+        </div>
+    </div>
+}
+
+@code {
+    private int currentPage = 1;
+    private int totalPages;
+
+    // [CascadingParameter]
+    // public IModalService Modal { get; set; } = default!;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Page { get; set; } = string.Empty;
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Filter { get; set; } = string.Empty;
+
+    public List<Producto>? Productos { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync(int page = 1)
+    {
+        if (!string.IsNullOrWhiteSpace(Page)) page = Convert.ToInt32(Page);
+
+        string url1 = string.Empty;
+        string url2 = string.Empty;
+
+        if (string.IsNullOrEmpty(Filter))
+        {
+            url1 = $"api/productos?page={page}";
+            url2 = $"api/productos/totalPages";
+        }
+        else
+        {
+            url1 = $"api/productos?page={page}&filter={Filter}";
+            url2 = $"api/productos/totalPages?filter={Filter}";
+        }
+
+        try
+        {
+            var responseHttp = await repository.Get<List<Producto>>(url1);
+            var responseHttp2 = await repository.Get<int>(url2);
+            Productos = responseHttp.Response;
+            totalPages = responseHttp2.Response;
+        }
+        catch (Exception ex)
+        {
+            await sweetAlertService.FireAsync("Error", ex.Message, SweetAlertIcon.Error);
+        }
+    }
+
+    private async Task EliminarProductoAsync(int id)
+    {
+        var result = await sweetAlertService.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "¿Realmente desea eliminar el registro?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true,
+            CancelButtonText = "No",
+            ConfirmButtonText = "Si"
+        });
+
+        if (string.IsNullOrEmpty(result.Value)) return;
+
+        var responseHttp = await repository.Delete($"/api/productos/{id}");
+
+        if (responseHttp.Error)
+        {
+            if (responseHttp.HttpResponseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/");
+                return;
+            }
+
+            var mensajeError = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", mensajeError, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task SelectedPageAsync(int page)
+    {
+        currentPage = page;
+        await LoadAsync(page);
+    }
+
+    private async Task AplicarFiltroAsync()
+    {
+        int page = 1;
+        await LoadAsync(page);
+        await SelectedPageAsync(page);
+    }
+
+    private async Task LimpiarFiltroAsync()
+    {
+        Filter = string.Empty;
+        await AplicarFiltroAsync();
+    }
+
+    // private async Task ShowModal(int id = 0, bool isEdit = false)
+    // {
+    //     IModalReference modalReference;
+
+    //     if (isEdit)
+    //     {
+    //         modalReference = Modal.Show<PaisEditar>(string.Empty, new ModalParameters().Add("Id", id));
+    //     }
+    //     else
+    //     {
+    //         modalReference = Modal.Show<PaisNuevo>();
+    //     }
+
+    //     var result = await modalReference.Result;
+
+    //     if (result.Confirmed)
+    //     {
+    //         await LoadAsync();
+    //     }
+    // }
+}

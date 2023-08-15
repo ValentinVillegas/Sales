@@ -1,0 +1,154 @@
+﻿@inject SweetAlertService sweetAlertService
+
+<NavigationLock OnBeforeInternalNavigation="OnBeforeInternalNavigation"></NavigationLock>
+
+<EditForm EditContext="editContext" OnValidSubmit="OnDataAnnotationsValidatedAsync">
+    <DataAnnotationsValidator />
+
+    <div class="card">
+        <div class="card-header">
+            <span>
+                <i class="oi oi-star" />&nbsp;Crear Nuevo Producto
+                <a class="btn btn-sm btn-success float-end" href="/productos"><i class="oi oi-arrow-thick-left" />&nbsp;Regresar</a>
+                <button class="btn btn-sm btn-primary float-end mx-2" type="submit"><i class="oi oi-check" />&nbsp;Guardar Cambios</button>
+            </span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-6">
+                    <div class="mb-3">
+                        <label>Nombre:</label>
+                        <div>
+                            <InputText class="form-control" @bind-Value="@ProductoDTO.Nombre" />
+                            <ValidationMessage For="@(() => ProductoDTO.Nombre)" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Descripción:</label>
+                        <div>
+                            <InputText class="form-control" @bind-Value="@ProductoDTO.Descripcion" />
+                            <ValidationMessage For="@(() => ProductoDTO.Descripcion)" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Precio:</label>
+                        <div>
+                            <InputNumber class="form-control" @bind-Value="@ProductoDTO.Precio" />
+                            <ValidationMessage For="@(() => ProductoDTO.Precio)" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Inventario:</label>
+                        <div>
+                            <InputNumber class="form-control" @bind-Value="@ProductoDTO.Stock" />
+                            <ValidationMessage For="@(() => ProductoDTO.Stock)" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="mb-3">
+                        <label>Categorías:</label>
+                        <div>
+                            <MultipleSelector NoSeleccionado ="noSeleccionado" Seleccionado="seleccionado" />
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <InputImg Label="Foto" ImagenSeleccionada="ImagenSeleccionada" ImageURL="@imageUrl" />
+                    </div>
+                    @if (IsEdit)
+                    {
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-primary" @onclick="AgregarImagenAction"><i class="oi oi-plus" />&nbsp;Agregar Imagenes</button>
+                            <button type="button" class="btn btn-outline-danger" @onclick="RemoverImagenAction"><i class="oi oi-trash" />&nbsp;Eliminar Última Imagen</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@*@if (IsEdit && ProductDTO.ProductImages is not null)
+{
+    <CarouselView Images="ProductDTO.ProductImages" />
+}*@
+
+@code {
+    private EditContext editContext = null!;
+    private List<MultipleSelectorModel> seleccionado { get; set; } = new();
+    private List<MultipleSelectorModel> noSeleccionado { get; set; } = new();
+
+    private string? imageUrl;
+
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    [EditorRequired]
+    [Parameter]
+    public ProductoDTO ProductoDTO { get; set; } = null!;
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback OnValidSubmit { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public EventCallback ReturnAction { get; set; }
+
+    [Parameter]
+    public EventCallback AgregarImagenAction { get; set; }
+
+    [Parameter]
+    public EventCallback RemoverImagenAction { get; set; }
+
+    [Parameter]
+    public List<Categoria> CategoriasSeleccionadas { get; set; } = new();
+
+    [Parameter]
+    [EditorRequired]
+    public List<Categoria> CategoriasSinSeleccionar { get; set; } = new();
+
+    public bool formularioEnviado { get; set; } = false;
+
+    protected override void OnInitialized()
+    {
+        editContext = new(ProductoDTO);
+        seleccionado = CategoriasSeleccionadas.Select(x => new MultipleSelectorModel(x.Id.ToString(), x.Nombre)).ToList();
+        noSeleccionado = CategoriasSinSeleccionar.Select(x => new MultipleSelectorModel(x.Id.ToString(), x.Nombre)).ToList();
+    }
+
+    private void ImagenSeleccionada(string imgBase64)
+    {
+        if (ProductoDTO.ImagenesProducto is null) ProductoDTO.ImagenesProducto = new List<string>();
+        ProductoDTO.ImagenesProducto.Add(imgBase64);
+        imageUrl = null;
+    }
+
+    private async Task OnDataAnnotationsValidatedAsync()
+    {
+        ProductoDTO.IdCategoriasProducto = seleccionado.Select(x => int.Parse(x.Key)).ToList();
+        await OnValidSubmit.InvokeAsync();
+    }
+
+    private async Task OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        var formularioModificado = editContext.IsModified();
+
+        if (!formularioModificado || formularioEnviado) return;
+
+        await sweetAlertService.FireAsync(new SweetAlertOptions
+            {
+                Title = "Confirmación",
+                Text = "Si abandona la página los cambios se perderán ¿Desea continuar?.",
+                Icon = SweetAlertIcon.Question,
+                ShowCancelButton = true,
+                CancelButtonText = "No",
+                ConfirmButtonText = "Si",
+                Timer = 3000
+            });
+
+        // if (!string.IsNullOrEmpty(result.Value)) return;
+
+        context.PreventNavigation();
+    }
+}

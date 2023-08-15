@@ -1,0 +1,70 @@
+﻿@page "/productos/crear"
+@inject IRepository repository
+@inject NavigationManager navigationManager
+@inject SweetAlertService sweetAlertService
+@attribute [Authorize(Roles = "Admin")]
+
+@if (loading)
+{
+    <div class="spinner" />
+}
+else
+{
+    <ProductoForm @ref="productoForm" ProductoDTO="productoDTO" CategoriasSinSeleccionar="categoriasSinSeleccionar" OnValidSubmit="CrearProductoAsync" ReturnAction="Regresar" />
+}
+
+@code {
+    private ProductoDTO productoDTO = new ProductoDTO
+    {
+        IdCategoriasProducto = new List<int>(),
+        ImagenesProducto = new List<string>()
+    };
+
+    private ProductoForm? productoForm;
+    private List<Categoria> categoriasSeleccionadas = new();
+    private List<Categoria> categoriasSinSeleccionar = new();
+    private bool loading = true;
+
+    protected async override Task OnInitializedAsync()
+    {
+        var httpResponse = await repository.Get<List<Categoria>>("/api/categorias");
+        loading = false;
+
+        if (httpResponse.Error)
+        {
+            var message = await httpResponse.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        categoriasSinSeleccionar = httpResponse.Response!;
+    }
+
+    private async Task CrearProductoAsync()
+    {
+        var httpResponse = await repository.Post("/api/productos", productoDTO);
+        if (httpResponse.Error)
+        {
+            var message = await httpResponse.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        await sweetAlertService.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "El producto fue guardado con éxito",
+            Icon = SweetAlertIcon.Success,
+            ShowCancelButton = false,
+            ShowConfirmButton = false
+        });
+
+        Regresar();
+    }
+
+    private void Regresar()
+    {
+        productoForm!.formularioEnviado= true;
+        navigationManager.NavigateTo($"/productos");
+    }
+}
