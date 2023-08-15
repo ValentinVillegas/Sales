@@ -68,10 +68,10 @@
     </div>
 </EditForm>
 
-@*@if (IsEdit && ProductDTO.ProductImages is not null)
+@if (IsEdit && ProductoDTO.ImagenesProducto is not null)
 {
-    <CarouselView Images="ProductDTO.ProductImages" />
-}*@
+    <CarouselView Imagenes="ProductoDTO.ImagenesProducto" />
+}
 
 @code {
     private EditContext editContext = null!;

@@ -1,0 +1,125 @@
+﻿@page "/productos/editar/{IdProducto:int}"
+@inject IRepository repository
+@inject SweetAlertService sweetAlertService
+@inject NavigationManager navigationManager
+@attribute [Authorize(Roles = "Admin")]
+
+@if (cargando)
+{
+    <div class="spinner"></div>
+}
+else
+{
+    <ProductoForm @ref="productoForm" ProductoDTO="productoDTO" CategoriasSeleccionadas="categoriasSeleccionadas" CategoriasSinSeleccionar="categoriasSinSeleccionar" 
+        OnValidSubmit="GuardarProductoAsync" ReturnAction="Regresar" IsEdit=true AgregarImagenAction="AgregarImagenAsync" RemoverImagenAction="RemoverImagenAsync"/>
+}
+
+@code {
+    private ProductoDTO productoDTO = new ProductoDTO
+    {
+        IdCategoriasProducto = new List<int>(),
+        ImagenesProducto = new List<string>()
+    };
+
+    private ProductoForm? productoForm;
+    private List<Categoria> categoriasSeleccionadas = new();
+    private List<Categoria> categoriasSinSeleccionar = new();
+    private bool cargando = true;
+    private Producto? producto;
+
+    [Parameter]
+    public int IdProducto { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProductoAsync();
+        await CargarCategoriasAsync();
+    }
+
+    private async Task CargarProductoAsync()
+    {
+        cargando = true;
+
+        var responseHttp = await repository.Get<Producto>($"/api/productos/{IdProducto}");
+
+        if (responseHttp.Error)
+        {
+            cargando = false;
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        producto = responseHttp.Response;
+        productoDTO = new ProductoDTO
+        {
+            Descripcion = producto!.Descripcion,
+            Id = producto.Id,
+            Nombre = producto.Nombre,
+            Precio = producto.Precio,
+            Stock = producto.Stock,
+            IdCategoriasProducto = producto.CategoriasProducto!.Select(x => x.CategoriaId).ToList(),
+            ImagenesProducto = producto.ProductoImagenes!.Select(x => x.Image).ToList()
+        };
+    }
+
+    private async Task CargarCategoriasAsync()
+    {
+        cargando = true;
+        var responseHttp = await repository.Get<List<Categoria>>("/api/categorias");
+
+        if (responseHttp.Error)
+        {
+            cargando = false;
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        var categorias = responseHttp.Response;
+
+        foreach (var categoria in categorias!)
+        {
+            var categoriaEnProd = producto!.CategoriasProducto!.FirstOrDefault(x => x.CategoriaId == categoria.Id);
+
+            if (categoriaEnProd is null)
+            {
+                categoriasSinSeleccionar.Add(categoria);
+            }
+            else
+            {
+                categoriasSeleccionadas.Add(categoria);
+            }
+        }
+
+        cargando = false;
+    }
+
+    private async Task AgregarImagenAsync()
+    {
+    }
+
+    private async Task RemoverImagenAsync()
+    {
+    }
+
+    private async Task GuardarProductoAsync()
+    {
+        var responseHttp = await repository.Put("/api/productos", productoDTO);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        Regresar();
+    }
+
+    private void Regresar()
+    {
+        productoForm!.formularioEnviado = true;
+        navigationManager.NavigateTo("/productos");
+    }
+}
