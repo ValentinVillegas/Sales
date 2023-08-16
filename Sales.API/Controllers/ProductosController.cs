@@ -103,6 +103,51 @@ namespace Sales.API.Controllers
             }
         }
 
+        [HttpPost("agregarImagenes")]
+        public async Task<IActionResult> PostAgregarImagenesAsync(ImagenDTO imagenDTO)
+        {
+            var producto = await _context.Productos.Include(x => x.ProductoImagenes).FirstOrDefaultAsync(x => x.Id == imagenDTO.ProductoId);
+
+            if (producto is null) return NotFound();
+
+            if (producto.ProductoImagenes is null) producto.ProductoImagenes = new List<ProductoImage>();
+
+            for (int i = 0; i < imagenDTO.Imagenes.Count; i++)
+            {
+                if (!imagenDTO.Imagenes[i].StartsWith("https://sales2023.blob.core.windows.net/products/"))
+                {
+                    var imagenProducto = Convert.FromBase64String(imagenDTO.Imagenes[i]);
+                    imagenDTO.Imagenes[i] = await _fileStorage.SaveFileAsync(imagenProducto, ".jpg", "products");
+                    producto.ProductoImagenes.Add(new ProductoImage { Image = imagenDTO.Imagenes[i] });
+                }
+            }
+
+            _context.Productos.Update(producto);
+            await _context.SaveChangesAsync();
+            return Ok(imagenDTO);
+        }
+
+        [HttpPost("removerUltimaImagen")]
+        public async Task<IActionResult> PostRemoverUltimaImagenAsync(ImagenDTO imagenDTO)
+        {
+            var producto = await _context.Productos.Include(x => x.ProductoImagenes).FirstOrDefaultAsync(x => x.Id == imagenDTO.ProductoId);
+
+            if(producto is null) return NotFound();
+
+            if (producto.ProductoImagenes is null || producto.ProductoImagenes.Count == 0) return Ok();
+
+            var ultimaImagen = producto.ProductoImagenes.LastOrDefault();
+            await _fileStorage.RemoveFileAsync(ultimaImagen!.Image, "products");
+            producto.ProductoImagenes.Remove(ultimaImagen);
+
+            _context.Productos.Update(producto); 
+            await _context.SaveChangesAsync();
+
+            imagenDTO.Imagenes = producto.ProductoImagenes.Select(x => x.Image).ToList();
+
+            return Ok(imagenDTO);
+        }
+
         [HttpPut]
         public async Task<IActionResult> PutAsync(ProductoDTO productoDTO)
         {

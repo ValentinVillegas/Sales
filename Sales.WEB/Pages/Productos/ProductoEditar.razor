@@ -97,10 +97,82 @@ else
 
     private async Task AgregarImagenAsync()
     {
+        if (productoDTO.ImagenesProducto is null || productoDTO.ImagenesProducto.Count == 0) return;
+
+        // TODO: Validar que muestre alerta si no se ha seleccionado alguna imagen para subir
+
+        var imagenDTO = new ImagenDTO
+        {
+            ProductoId = IdProducto,
+            Imagenes = productoDTO.ImagenesProducto
+        };
+
+        var responseHttp = await repository.Post<ImagenDTO, ImagenDTO>("/api/productos/agregarImagenes", imagenDTO);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        productoDTO.ImagenesProducto = responseHttp.Response!.Imagenes;
+
+        var toast = sweetAlertService.Mixin(new SweetAlertOptions
+        {
+            Toast = true,
+            Position = SweetAlertPosition.TopEnd,
+            ShowConfirmButton = false,
+            Timer = 5000
+        });
+
+        await toast.FireAsync(icon:SweetAlertIcon.Success, message: "Imagenes agregadas con éxito");
     }
 
     private async Task RemoverImagenAsync()
     {
+        if (productoDTO.ImagenesProducto is null || productoDTO.ImagenesProducto.Count == 0) return;
+
+        var confirm = await sweetAlertService.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "¿Realmente desea eliminar la última imagen agregada?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true,
+            CancelButtonText = "No",
+            ConfirmButtonText = "Si"
+        });
+
+        if (string.IsNullOrEmpty(confirm.Value)) return;
+
+        var imagenDto = new ImagenDTO
+        {
+            ProductoId = IdProducto,
+            Imagenes = productoDTO.ImagenesProducto
+        };
+
+        var responseHttp = await repository.Post<ImagenDTO, ImagenDTO>("/api/productos/removerUltimaImagen", imagenDto);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        productoDTO.ImagenesProducto = responseHttp.Response!.Imagenes;
+
+        productoDTO.ImagenesProducto = responseHttp.Response!.Imagenes;
+
+        var toast = sweetAlertService.Mixin(new SweetAlertOptions
+            {
+                Toast = true,
+                Position = SweetAlertPosition.TopEnd,
+                ShowConfirmButton = false,
+                Timer = 5000
+            });
+
+        await toast.FireAsync(icon: SweetAlertIcon.Success, message: "Imagen eliminada con éxito");
     }
 
     private async Task GuardarProductoAsync()
