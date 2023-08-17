@@ -24,6 +24,7 @@ namespace Sales.API.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAsync([FromQuery] PaginationDTO paginacion)
         {
             var queryable = _context.Productos.Include(p => p.ProductoImagenes).Include(p => p.CategoriasProducto).AsQueryable();
@@ -34,6 +35,7 @@ namespace Sales.API.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAsync(int id)
         {
             var producto = await _context.Productos.Include(p => p.ProductoImagenes).Include(p => p.CategoriasProducto!).ThenInclude(p => p.Categoria).FirstOrDefaultAsync(p => p.Id == id);
@@ -44,6 +46,7 @@ namespace Sales.API.Controllers
         }
 
         [HttpGet("totalPages")]
+        [AllowAnonymous]
         public async Task<ActionResult> GetPaginas([FromQuery] PaginationDTO paginacion)
         {
             var queryable = _context.Productos.AsQueryable();

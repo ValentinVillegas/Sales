@@ -1,19 +1,134 @@
 ﻿@page "/"
+@inject IRepository repository
+@inject SweetAlertService sweetAlertService
+@inject NavigationManager navigationManager
 
-<PageTitle>Index</PageTitle>
+<style type="text/css">
+    .card{
+        display:flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border: 1px, solid, lightgray;
+        box-shadow: 2px 2px 8px 4px #d3d3d3d1;
+        border-radius:15px;
+        font-family: sans-serif;
+        margin:5px;
+    }
+</style>
 
-<AuthorizeView Roles="Admin">
-    <Authorized>
-        <p>Estás autenticado @context.User.Identity?.Name</p>
-    </Authorized>
-    
-    <NotAuthorized>
-        <p>No estás autorizado</p>
-    </NotAuthorized>
-</AuthorizeView>
+@if (Productos is null)
+{
+    <div class="spinner"/>
+}
 
-<h1>Hello, world!</h1>
+else
+{
+    <div class="mb-2" style="display: flex; flex-wrap:wrap; align-items: center;">
+        <div>
+            <input style="width: 400px;" type="text" class="form-control" id="titulo" placeholder="Buscar producto..." @bind-value="Filter" />
+        </div>
+        <div class="mx-1">
+            <button type="button" class="btn btn-outline-primary" @onclick="AplicarFiltroAsync"><i class="oi oi-layers" /> Filtrar</button>
+            <button type="button" class="btn btn-outline-danger" @onclick="LimpiarFiltroAsync"><i class="oi oi-ban" /> Limpiar</button>
+        </div>
+    </div>
 
-Welcome to your new app.
+    <Paginacion PaginaActual="paginaActual" TotalPaginas="totalPaginas" SeleccionarPagina="SeleccionarPaginaAsync" />
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+    <div class="row row-cols-1 row-cols-md-4 g-4 mt-1">
+        @foreach (var producto in Productos!)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="text-center zoom">
+                        <img src="@producto.ImagenPrincipal" style="height:150px; max-width:200px;" class="text-center" alt=@producto.Nombre />
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title text-navy"> @producto.Nombre</h5>
+                        <p class="card-text smfnt">@producto.Descripcion</p>
+                        <h5 class="text-muted">@($"{producto.Precio:C2}")</h5>
+                    </div>
+                    <div class="card-footer text-center">
+                        <a href="/productos/detalles/@producto.Id" class="btn btn-sm btn-secondary"><i class="oi oi-info" />&nbsp;Detalles</a>
+                        <button class="btn btn-sm btn-primary" @onclick=@(() => AgregarCarritoAsync(producto.Id))><i class="oi oi-plus" />&nbsp;Agregar al Carro</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code{
+    private int paginaActual = 1;
+    private int totalPaginas;
+
+    public List<Producto> Productos { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Page { get; set; } = "";
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string Filter { get; set; } = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task SeleccionarPaginaAsync(int pagina = 1)
+    {
+        paginaActual = pagina;
+        await LoadAsync(pagina);
+    }
+
+    private async Task LoadAsync(int pagina = 1)
+    {
+        if (!string.IsNullOrWhiteSpace(Page)) pagina = Convert.ToInt32(Page);
+
+        string url1 = string.Empty;
+        string url2 = string.Empty;
+
+        if (string.IsNullOrEmpty(Filter))
+        {
+            url1 = $"/api/productos?page={pagina}&RecordsNumber=8";
+            url2 = $"/api/productos/totalPages?RecordsNumber=8";
+        }
+        else
+        {
+            url1 = $"/api/productos?page={pagina}&filter={Filter}&RecordsNumber=8";
+            url2 = $"/api/productos/totalPages?filter={Filter}&RecordsNumber=8";
+        }
+
+        try
+        {
+            var response1 = await repository.Get<List<Producto>>(url1);
+            var response2 = await repository.Get<int>(url2);
+
+            Productos = response1.Response!;
+            totalPaginas = response2.Response;
+        }
+        catch(Exception ex)
+        {
+            await sweetAlertService.FireAsync("Error", ex.Message, SweetAlertIcon.Error);
+        }
+    }
+
+    private async Task LimpiarFiltroAsync()
+    {
+        Filter = string.Empty;
+        await AplicarFiltroAsync();
+    }
+
+    private async Task AplicarFiltroAsync()
+    {
+        await LoadAsync(1);
+        await SeleccionarPaginaAsync(1);
+    }
+
+    private async Task AgregarCarritoAsync(int idProducto)
+    {
+        
+    }
+}
