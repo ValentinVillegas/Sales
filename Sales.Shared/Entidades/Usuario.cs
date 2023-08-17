@@ -46,5 +46,7 @@ namespace Sales.Shared.Entidades
 
         [Display(Name = "Usuario")]
         public string NombreCompleto => $"{Nombre} {Apellido}";
+
+        public ICollection<VentaTemporal>? VentasTemporales { get; set; }
     }
 }

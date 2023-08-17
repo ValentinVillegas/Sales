@@ -26,6 +26,8 @@ namespace Sales.API.Data
 
         public DbSet<ProductoImage> ProductoImagenes { get; set; }
 
+        public DbSet<VentaTemporal> VentasTemporales { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -46,5 +46,7 @@ namespace Sales.Shared.Entidades
 
         [Display(Name = "Imagen")]
         public string ImagenPrincipal => ProductoImagenes == null ? string.Empty : ProductoImagenes.FirstOrDefault()!.Image;
+
+        public ICollection<VentaTemporal>? VentasTemporales { get; set; }
     }
 }

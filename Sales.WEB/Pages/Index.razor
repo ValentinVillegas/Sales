@@ -31,6 +31,14 @@ else
             <button type="button" class="btn btn-outline-primary" @onclick="AplicarFiltroAsync"><i class="oi oi-layers" /> Filtrar</button>
             <button type="button" class="btn btn-outline-danger" @onclick="LimpiarFiltroAsync"><i class="oi oi-ban" /> Limpiar</button>
         </div>
+        <AuthorizeView>
+            <Authorized>
+                @if (contadorProductosCarrito > 0)
+                {
+                    <a href="/Ordenes/VerCarrito" class="btn btn-primary">Ver carrito de compras (@contadorProductosCarrito)</a>
+                }
+            </Authorized>
+        </AuthorizeView>
     </div>
 
     <Paginacion PaginaActual="paginaActual" TotalPaginas="totalPaginas" SeleccionarPagina="SeleccionarPaginaAsync" />
@@ -50,7 +58,7 @@ else
                     </div>
                     <div class="card-footer text-center">
                         <a href="/productos/detalles/@producto.Id" class="btn btn-sm btn-secondary"><i class="oi oi-info" />&nbsp;Detalles</a>
-                        <button class="btn btn-sm btn-primary" @onclick=@(() => AgregarCarritoAsync(producto.Id))><i class="oi oi-plus" />&nbsp;Agregar al Carro</button>
+                        <button class="btn btn-sm btn-primary" @onclick=@(() => AgregarCarritoAsync(producto.Id))><i class="oi oi-plus" />&nbsp;Agregar al Carrito</button>
                     </div>
                 </div>
             </div>
@@ -61,6 +69,8 @@ else
 @code{
     private int paginaActual = 1;
     private int totalPaginas;
+    private int contadorProductosCarrito = 0;
+    private bool autenticado;
 
     public List<Producto> Productos { get; set; }
 
@@ -72,9 +82,35 @@ else
     [SupplyParameterFromQuery]
     public string Filter { get; set; } = "";
 
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; } = null!;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await UsuarioSeEncuentraAutenticado();
+        await CantidadProductosAgregadosAsync();
+    }
+
+    private async Task UsuarioSeEncuentraAutenticado()
+    {
+        var authenticationState = await authenticationStateTask;
+        autenticado = authenticationState.User.Identity!.IsAuthenticated;
+    }
+
+    private async Task CantidadProductosAgregadosAsync()
+    {
+        if (!autenticado) return;
+
+        var responseHttp = await repository.Get<int>("/api/ventasTemporales/cantArticulosCarrito");
+
+        if (responseHttp.Error) return;
+
+        contadorProductosCarrito = responseHttp.Response;
     }
 
     private async Task SeleccionarPaginaAsync(int pagina = 1)
@@ -129,6 +165,47 @@ else
 
     private async Task AgregarCarritoAsync(int idProducto)
     {
-        
+        if (!autenticado)
+        {
+            navigationManager.NavigateTo("/Login");
+
+            var toast1 = sweetAlertService.Mixin(new SweetAlertOptions
+            {
+                Toast = true,
+                Position = SweetAlertPosition.TopEnd,
+                ShowConfirmButton = false,
+                Timer = 5000
+            });
+
+            await toast1.FireAsync(icon: SweetAlertIcon.Error, message: "Es necesario iniciar sesión para agregar productos al carrito de compras.");
+
+            return;
+        }
+
+        var ventaTemporalDTO = new VentaTemporalDTO
+        {
+            IdProducto = idProducto
+        };
+
+        var responseHttp = await repository.Post("/api/ventasTemporales", ventaTemporalDTO);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        await CantidadProductosAgregadosAsync();
+
+        var toast2 = sweetAlertService.Mixin(new SweetAlertOptions
+            {
+                Toast = true,
+                Position = SweetAlertPosition.TopEnd,
+                ShowConfirmButton = false,
+                Timer = 5000
+            });
+
+        await toast2.FireAsync(icon: SweetAlertIcon.Success, message: "Producto agregado al carrito de compras");
     }
 }

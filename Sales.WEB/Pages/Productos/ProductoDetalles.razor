@@ -1,0 +1,181 @@
+﻿@page "/productos/detalles/{IdProducto:int}"
+@inject IRepository repository
+@inject SweetAlertService sweetAlertService
+@inject NavigationManager navigationManager
+
+@if (cargando)
+{
+    <div class="spinner"/>
+}
+
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <span>
+                <i class="oi oi-cart"/>&nbsp;@producto.Nombre
+                <a class="btn btn-sm btn-success float-end" href="/"><i class="oi oi-arrow-thick-left"/>&nbsp;Regresar</a>
+            </span>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+
+                <div class="col-6">
+                    <div class="mb-3">
+                        <label>Nombre:</label>
+                        <div>
+                            <b>@producto.Nombre</b>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Descripción:</label>
+                        <div>
+                            <b>@producto.Descripcion</b>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Precio:</label>
+                        <div>
+                            <b>@($"{producto.Precio:C2}")</b>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Existencia:</label>
+                        <div>
+                            <b>@($"{producto.Stock:N2}")</b>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Categorias:</label>
+                        <div>
+                            @foreach(var categoria in categorias!){
+                                <div class="mx-2"><b>@categoria</b></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <EditForm Model="VentaTemporalDTO" OnInvalidSubmit="AgregarAlCarritoAsync">
+                        <DataAnnotationsValidator/>
+                        <div class="mb-3">
+                            <label>Cantidad:</label>
+                            <div>
+                                <InputNumber class="form-control" @bind-Value="@VentaTemporalDTO.Cantidad"/>
+                                <ValidationMessage For="@(() => VentaTemporalDTO.Cantidad)"/>
+                            </div>
+
+                            <label>Comentarios:</label>
+                            <div>
+                                <InputText class="form-control" @bind-Value="@VentaTemporalDTO.Comentarios" />
+                                <ValidationMessage For="@(() => VentaTemporalDTO.Comentarios)" />
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" type="submit"><i class="oi oi-plus"/>&nbsp;Agregar al carrito de compras</button>
+                    </EditForm>
+                </div>
+            </div>
+
+            <CarouselView Imagenes="imagenes"/>
+
+        </div>
+    </div>
+}
+
+@code {
+    private List<string>? categorias;
+    private List<string>? imagenes;
+    private bool cargando = true;
+    private Producto producto;
+    private bool autenticado;
+
+    [Parameter]
+    public int IdProducto { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authentionStateTask { get; set; } = null!;
+
+    public VentaTemporalDTO VentaTemporalDTO { get; set; } = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await UsuarioSeEncuentraAutenticado();
+    }
+
+    private async Task UsuarioSeEncuentraAutenticado()
+    {
+        var authenticationState = await authentionStateTask;
+        autenticado = authenticationState.User.Identity!.IsAuthenticated;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProductoAsync();
+    }
+
+    private async Task CargarProductoAsync()
+    {
+        cargando = true;
+
+        var responseHttp = await repository.Get<Producto>($"/api/productos/{IdProducto}");
+
+        if (responseHttp.Error)
+        {
+            cargando = false;
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        producto = responseHttp.Response!;
+        categorias = producto.CategoriasProducto!.Select(x => x.Categoria.Nombre).ToList();
+        imagenes = producto.ProductoImagenes!.Select(x => x.Image).ToList();
+        cargando = false;
+    }
+
+    private async Task AgregarAlCarritoAsync()
+    {
+        if (!autenticado)
+        {
+            navigationManager.NavigateTo("/Login");
+
+            var toast1 = sweetAlertService.Mixin(new SweetAlertOptions
+            {
+                Toast = true,
+                Position = SweetAlertPosition.TopEnd,
+                ShowConfirmButton = false,
+                Timer = 5000
+            });
+
+            await toast1.FireAsync(icon: SweetAlertIcon.Error, message: "Es necesario iniciar sesión para agregar productos al carrito de compras.");
+            return;
+        }
+
+        VentaTemporalDTO.IdProducto = IdProducto;
+
+        var responseHttp = await repository.Post("/api/ventasTemporales", VentaTemporalDTO);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        var toast2 = sweetAlertService.Mixin(new SweetAlertOptions
+            {
+                Toast = true,
+                Position = SweetAlertPosition.TopEnd,
+                ShowConfirmButton = false,
+                Timer = 5000
+            });
+
+        await toast2.FireAsync(icon: SweetAlertIcon.Success, message: "Producto agregado al carrito de compras.");
+        navigationManager.NavigateTo("/");
+    }
+}
