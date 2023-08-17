@@ -1,4 +1,8 @@
-﻿@page "/ordenes/VerCarrito"
+﻿@page "/Ordenes/VerCarrito"
+@inject IRepository repository
+@inject SweetAlertService sweetAlertService
+@inject NavigationManager navigationManager
+@attribute [Authorize(Roles = "Admin, User")]
 
 <h3>VerCarrito</h3>
 

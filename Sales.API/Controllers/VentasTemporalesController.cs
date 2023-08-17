@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Crypto.Operators;
 using Sales.API.Data;
 using Sales.Shared.DTOs;
 using Sales.Shared.Entidades;
@@ -35,6 +36,14 @@ namespace Sales.API.Controllers
             return Ok(await _context.VentasTemporales.Where(x => x.Usuario!.Email == User.Identity!.Name).SumAsync(x => x.Cantidad));
         }
 
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetAsync(int id)
+        {
+            return Ok(await _context.VentasTemporales.Include(vt => vt.Usuario).Include(vt => vt.Producto)
+                .ThenInclude(p => p.CategoriasProducto!).ThenInclude(cp => cp.Categoria).Include(vt => vt.Producto)
+                .ThenInclude(p => p.ProductoImagenes).FirstOrDefaultAsync(x => x.Id == id));
+        }
+
         [HttpPost]
         public async Task<IActionResult> PostAsync(VentaTemporalDTO ventaTemporalDTO)
         {
@@ -64,6 +73,33 @@ namespace Sales.API.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Put(VentaTemporalDTO ventaTemporalDTO)
+        {
+            var ventaTemporal = await _context.VentasTemporales.FirstOrDefaultAsync(x => x.Id == ventaTemporalDTO.Id);
+
+            if (ventaTemporal is null) return NotFound();
+
+            ventaTemporal.Comentarios = ventaTemporalDTO.Comentarios;
+            ventaTemporal.Cantidad = ventaTemporalDTO.Cantidad;
+
+            _context.VentasTemporales.Update(ventaTemporal);
+            await _context.SaveChangesAsync();
+            return Ok(ventaTemporal);
+        }
+
+        [HttpDelete("{id_int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var ventaTemporal = await _context.VentasTemporales.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (ventaTemporal is null) return NotFound();
+
+            _context.VentasTemporales.Remove(ventaTemporal);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
     }
 }
