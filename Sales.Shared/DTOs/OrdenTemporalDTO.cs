@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Sales.Shared.DTOs
 {
-    public class VentaTemporalDTO
+    public class OrdenTemporalDTO
     {
         public int Id { get; set; }
         public int IdProducto { get; set; }

@@ -100,7 +100,7 @@ else
     [CascadingParameter]
     private Task<AuthenticationState> authentionStateTask { get; set; } = null!;
 
-    public VentaTemporalDTO VentaTemporalDTO { get; set; } = new();
+    public OrdenTemporalDTO VentaTemporalDTO { get; set; } = new();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -158,7 +158,7 @@ else
 
         VentaTemporalDTO.IdProducto = IdProducto;
 
-        var responseHttp = await repository.Post("/api/ventasTemporales", VentaTemporalDTO);
+        var responseHttp = await repository.Post("/api/ordenesTemporales", VentaTemporalDTO);
 
         if (responseHttp.Error)
         {

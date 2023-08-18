@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Sales.Shared.Entidades
 {
-    public class VentaTemporal
+    public class OrdenTemporal
     {
         public int Id { get; set; }
         public Usuario? Usuario { get; set; }

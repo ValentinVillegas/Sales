@@ -4,8 +4,152 @@
 @inject NavigationManager navigationManager
 @attribute [Authorize(Roles = "Admin, User")]
 
-<h3>VerCarrito</h3>
+@if (OrdenesTemporales is null)
+{
+    <div class="spinner"/>
+}
+
+else
+{
+    <ListaGenerica MiLista="OrdenesTemporales">
+        <Body>
+            <div class="card">
+                <div class="card-header">
+                    <span>
+                        <i class="oi oi-cart"/>&nbsp;Carrito de Compras
+                    </span>
+                </div>
+
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-4">
+                            <h3>Cantidad productos:<strong>@($"{cantidadArticulos:N2}")</strong></h3>
+                        </div>
+                        <div class="col-4">
+                            <h3>Subtotal:<strong>@($"{subtotalPedido:C2}")</strong></h3>
+                        </div>
+                    </div>
+
+                    <EditForm Model="OrdenDTO" OnInvalidSubmit="ConfirmarOrdenAsync">
+                        <DataAnnotationsValidator/>
+                        <div class="mb-3">
+                            <label>Comentarios:</label>
+                            <div>
+                                <InputText class="form-control" @bind-Value="@OrdenDTO.Comentarios"/>
+                                <ValidationMessage For="@(() => OrdenDTO.Comentarios)"/>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary mb-3" type="submit"><i class="oi oi-check"/>Confirmar Pedido</button>
+                    </EditForm>
+
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Cantidad</th>
+                                <th>Precio</th>
+                                <th>Importe</th>
+                                <th>Comentarios</th>
+                                <th>Imagen</th>
+                                <th style="width:200px;"></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach(var ordenTemporal in OrdenesTemporales){
+                                <tr>
+                                    <td>@ordenTemporal.Producto!.Nombre</td>
+                                    <td>@ordenTemporal.Producto.Descripcion</td>
+                                    <td>@ordenTemporal.Cantidad</td>
+                                    <td>@ordenTemporal.Producto.Precio</td>
+                                    <td>@ordenTemporal.Importe</td>
+                                    <td>@ordenTemporal.Comentarios</td>
+                                    <td><img src="@ordenTemporal.Producto.ImagenPrincipal" style="width:100px;" /></td>
+                                    <td>
+                                        <a href="/ordenes/ModificarOdenTemporal/@ordenTemporal.Id" class="btn btn-warning"><i class="oi oi-pencil"/>Editar Partida</a>
+                                        <button class="btn btn-danger" @onclick="@(() => EliminarPartidaAsync(ordenTemporal.Id))"><i class="oi oi-trash"/>&nbsp;Eliminar Partida</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </Body>
+    </ListaGenerica>
+}
 
 @code {
+    private List<OrdenTemporal> OrdenesTemporales { get; set; }
+    private float cantidadArticulos;
+    private decimal subtotalPedido;
 
+    public OrdenDTO OrdenDTO { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var responseHttp = await repository.Get<List<OrdenTemporal>>("/api/ordenesTemporales");
+            OrdenesTemporales = responseHttp.Response!;
+            cantidadArticulos = OrdenesTemporales.Sum(x => x.Cantidad);
+            subtotalPedido = OrdenesTemporales.Sum(x => x.Importe);
+        }catch(Exception ex)
+        {
+            await sweetAlertService.FireAsync("Error", ex.Message, SweetAlertIcon.Error);   
+        }
+    }
+
+    private async Task EliminarPartidaAsync(int OrdenTemporalId)
+    {
+        var confirm = await sweetAlertService.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "¿Desea eliminar el artículo del carrito de compras?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true,
+            CancelButtonText = "No"
+        });
+
+        if (string.IsNullOrEmpty(confirm.Value)) return;
+
+        var responseHttp = await repository.Delete($"/api/ordenesTemporales/{OrdenTemporalId}");
+
+        if (responseHttp.Error)
+        {
+            if(responseHttp.HttpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/");
+                return;
+            }
+
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        await LoadAsync();
+
+        var toast = sweetAlertService.Mixin(new SweetAlertOptions
+        {
+            Toast = true,
+            Position = SweetAlertPosition.TopEnd,
+            ShowConfirmButton = false,
+            Timer = 2000
+        });
+
+        await toast.FireAsync(icon: SweetAlertIcon.Success, message:"Articulo eliminado del carrito de compras");
+    }
+
+    private async Task ConfirmarOrdenAsync()
+    {
+        //TODO: Pendiente de implementar
+    }
 }

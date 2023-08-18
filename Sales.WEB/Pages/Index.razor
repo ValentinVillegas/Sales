@@ -106,7 +106,7 @@ else
     {
         if (!autenticado) return;
 
-        var responseHttp = await repository.Get<int>("/api/ventasTemporales/cantArticulosCarrito");
+        var responseHttp = await repository.Get<int>("/api/ordenesTemporales/cantArticulosCarrito");
 
         if (responseHttp.Error) return;
 
@@ -174,7 +174,7 @@ else
                 Toast = true,
                 Position = SweetAlertPosition.TopEnd,
                 ShowConfirmButton = false,
-                Timer = 5000
+                Timer = 2000
             });
 
             await toast1.FireAsync(icon: SweetAlertIcon.Error, message: "Es necesario iniciar sesión para agregar productos al carrito de compras.");
@@ -182,12 +182,12 @@ else
             return;
         }
 
-        var ventaTemporalDTO = new VentaTemporalDTO
+        var ventaTemporalDTO = new OrdenTemporalDTO
         {
             IdProducto = idProducto
         };
 
-        var responseHttp = await repository.Post("/api/ventasTemporales", ventaTemporalDTO);
+        var responseHttp = await repository.Post("/api/ordenesTemporales", ventaTemporalDTO);
 
         if (responseHttp.Error)
         {
@@ -203,7 +203,7 @@ else
                 Toast = true,
                 Position = SweetAlertPosition.TopEnd,
                 ShowConfirmButton = false,
-                Timer = 5000
+                Timer = 2000
             });
 
         await toast2.FireAsync(icon: SweetAlertIcon.Success, message: "Producto agregado al carrito de compras");
