@@ -68,7 +68,7 @@ else
                                     <td>@ordenTemporal.Comentarios</td>
                                     <td><img src="@ordenTemporal.Producto.ImagenPrincipal" style="width:100px;" /></td>
                                     <td>
-                                        <a href="/ordenes/ModificarOdenTemporal/@ordenTemporal.Id" class="btn btn-warning"><i class="oi oi-pencil"/>Editar Partida</a>
+                                        <a href="/Ordenes/ModificarPartida/@ordenTemporal.Id" class="btn btn-warning"><i class="oi oi-pencil"/>Editar Partida</a>
                                         <button class="btn btn-danger" @onclick="@(() => EliminarPartidaAsync(ordenTemporal.Id))"><i class="oi oi-trash"/>&nbsp;Eliminar Partida</button>
                                     </td>
                                 </tr>

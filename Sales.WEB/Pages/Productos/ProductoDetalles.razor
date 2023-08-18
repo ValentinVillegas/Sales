@@ -61,19 +61,19 @@ else
                 </div>
 
                 <div class="col-6">
-                    <EditForm Model="VentaTemporalDTO" OnValidSubmit="AgregarAlCarritoAsync">
+                    <EditForm Model="OrdenTemporalDTO" OnValidSubmit="AgregarAlCarritoAsync">
                         <DataAnnotationsValidator/>
                         <div class="mb-3">
                             <label>Cantidad:</label>
                             <div>
-                                <InputNumber class="form-control" @bind-Value="@VentaTemporalDTO.Cantidad"/>
-                                <ValidationMessage For="@(() => VentaTemporalDTO.Cantidad)"/>
+                                <InputNumber class="form-control" @bind-Value="@OrdenTemporalDTO.Cantidad" />
+                                <ValidationMessage For="@(() => OrdenTemporalDTO.Cantidad)" />
                             </div>
 
                             <label>Comentarios:</label>
                             <div>
-                                <InputText class="form-control" @bind-Value="@VentaTemporalDTO.Comentarios" />
-                                <ValidationMessage For="@(() => VentaTemporalDTO.Comentarios)" />
+                                <InputText class="form-control" @bind-Value="@OrdenTemporalDTO.Comentarios" />
+                                <ValidationMessage For="@(() => OrdenTemporalDTO.Comentarios)" />
                             </div>
                         </div>
                         <button class="btn btn-primary" type="submit"><i class="oi oi-plus"/>&nbsp;Agregar al carrito de compras</button>
@@ -100,7 +100,7 @@ else
     [CascadingParameter]
     private Task<AuthenticationState> authentionStateTask { get; set; } = null!;
 
-    public OrdenTemporalDTO VentaTemporalDTO { get; set; } = new();
+    public OrdenTemporalDTO OrdenTemporalDTO { get; set; } = new();
 
     protected override async Task OnParametersSetAsync()
     {
@@ -156,9 +156,9 @@ else
             return;
         }
 
-        VentaTemporalDTO.IdProducto = IdProducto;
+        OrdenTemporalDTO.IdProducto = IdProducto;
 
-        var responseHttp = await repository.Post("/api/ordenesTemporales", VentaTemporalDTO);
+        var responseHttp = await repository.Post("/api/ordenesTemporales", OrdenTemporalDTO);
 
         if (responseHttp.Error)
         {

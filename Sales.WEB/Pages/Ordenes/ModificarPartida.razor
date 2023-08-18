@@ -1,0 +1,165 @@
+﻿@page "/Ordenes/ModificarPartida/{OrdenId:int}"
+@inject IRepository repository
+@inject SweetAlertService sweetAlertService
+@inject NavigationManager navigationManager
+
+@if (cargando)
+{
+    <div class="spinner"/>
+}
+
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <span>
+                <i class="oi oi-cart" />&nbsp;@producto!.Nombre
+                <a class="btn btn-sm btn-success float-end" href="/Ordenes/VerCarrito"><i class="oi oi-arrow-thick-left" />&nbsp;Regresar</a>
+            </span>
+        </div>
+
+        <div class="card-body">
+            <div class="row">
+
+                <div class="col-6">
+                    <div class="mb-3">
+                        <label>Nombre:</label>
+                        <div>
+                            <b>@producto.Nombre</b>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Descripción:</label>
+                        <div>
+                            <b>@producto.Descripcion</b>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Precio:</label>
+                        <div>
+                            <b>@($"{producto.Precio:C2}")</b>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Existencia:</label>
+                        <div>
+                            <b>@($"{producto.Stock:N2}")</b>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Categorias:</label>
+                        <div>
+                            @foreach (var categoria in categorias!)
+                            {
+                                <div class="mx-2"><b>@categoria</b></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-6">
+                    <EditForm Model="ordenTemporalDTO" OnValidSubmit="ActualizarCarritoAsync">
+                        <DataAnnotationsValidator />
+                        <div class="mb-3">
+                            <label>Cantidad:</label>
+                            <div>
+                                <InputNumber class="form-control" @bind-Value="@ordenTemporalDTO.Cantidad" />
+                                <ValidationMessage For="@(() => ordenTemporalDTO.Cantidad)" />
+                            </div>
+
+                            <label>Comentarios:</label>
+                            <div>
+                                <InputText class="form-control" @bind-Value="@ordenTemporalDTO.Comentarios" />
+                                <ValidationMessage For="@(() => ordenTemporalDTO.Comentarios)" />
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" type="submit"><i class="oi oi-task" />&nbsp;Guardar cambios</button>
+                    </EditForm>
+                </div>
+            </div>
+
+            <CarouselView Imagenes="imagenes" />
+
+        </div>
+    </div>
+}
+
+@code {
+    private List<string>? categorias;
+    private List<string>? imagenes;
+    private bool cargando = true;
+    private Producto? producto;
+    private OrdenTemporalDTO? ordenTemporalDTO;
+
+    [Parameter]
+    public int OrdenId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        cargando = true;
+
+        var responseHttp = await repository.Get<OrdenTemporal>($"/api/ordenesTemporales/{OrdenId}");
+
+        if (responseHttp.Error)
+        {
+            if(responseHttp.HttpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+            {
+                cargando = false;
+                navigationManager.NavigateTo("/Ordenes/VerCarrito");
+                return;
+            }
+
+            cargando = false;
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        var ordenTemporal = responseHttp.Response;
+
+        ordenTemporalDTO = new OrdenTemporalDTO
+        {
+            Id = ordenTemporal!.Id,
+            IdProducto = ordenTemporal.IdProducto,
+            Comentarios = ordenTemporal.Comentarios!,
+            Cantidad = ordenTemporal.Cantidad
+        };
+
+        producto = ordenTemporal.Producto;
+        categorias = producto!.CategoriasProducto!.Select(x => x.Categoria.Nombre).ToList();
+        imagenes = producto.ProductoImagenes!.Select(x => x.Image).ToList();
+        cargando = false;
+    }
+
+    private async Task ActualizarCarritoAsync()
+    {
+        var responseHttp = await repository.Put("/api/ordenesTemporales", ordenTemporalDTO);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        var toast = sweetAlertService.Mixin(new SweetAlertOptions
+        {
+            Toast = true,
+            Position = SweetAlertPosition.TopEnd,
+            ShowConfirmButton = false,
+            Timer = 2000
+        });
+
+        await toast.FireAsync(icon: SweetAlertIcon.Success, message:"Partida modificada con éxito en el carrito de compras.");
+        navigationManager.NavigateTo("/Ordenes/VerCarrito");
+    }
+}
