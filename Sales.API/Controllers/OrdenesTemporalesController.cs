@@ -45,9 +45,9 @@ namespace Sales.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostAsync(OrdenTemporalDTO ventaTemporalDTO)
+        public async Task<IActionResult> PostAsync(OrdenTemporalDTO ordenTemporalDTO)
         {
-            var producto = await _context.Productos.FirstOrDefaultAsync(p => p.Id == ventaTemporalDTO.IdProducto);
+            var producto = await _context.Productos.FirstOrDefaultAsync(p => p.Id == ordenTemporalDTO.IdProducto);
 
             if (producto is null) return NotFound();
 
@@ -58,8 +58,8 @@ namespace Sales.API.Controllers
             var temporal = new OrdenTemporal
             {
                 Producto = producto,
-                Cantidad = ventaTemporalDTO.Cantidad,
-                Comentarios = ventaTemporalDTO.Comentarios,
+                Cantidad = ordenTemporalDTO.Cantidad,
+                Comentarios = ordenTemporalDTO.Comentarios,
                 Usuario = usuario
             };
 
@@ -67,7 +67,7 @@ namespace Sales.API.Controllers
             {
                 _context.OrdenesTemporales.Add(temporal);
                 await _context.SaveChangesAsync();
-                return Ok(ventaTemporalDTO);
+                return Ok(ordenTemporalDTO);
 
             } catch (Exception ex)
             {
@@ -76,14 +76,14 @@ namespace Sales.API.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> Put(OrdenTemporalDTO ventaTemporalDTO)
+        public async Task<IActionResult> Put(OrdenTemporalDTO ordenTemporalDTO)
         {
-            var ventaTemporal = await _context.OrdenesTemporales.FirstOrDefaultAsync(x => x.Id == ventaTemporalDTO.Id);
+            var ventaTemporal = await _context.OrdenesTemporales.FirstOrDefaultAsync(x => x.Id == ordenTemporalDTO.Id);
 
             if (ventaTemporal is null) return NotFound();
 
-            ventaTemporal.Comentarios = ventaTemporalDTO.Comentarios;
-            ventaTemporal.Cantidad = ventaTemporalDTO.Cantidad;
+            ventaTemporal.Comentarios = ordenTemporalDTO.Comentarios;
+            ventaTemporal.Cantidad = ordenTemporalDTO.Cantidad;
 
             _context.OrdenesTemporales.Update(ventaTemporal);
             await _context.SaveChangesAsync();

@@ -30,7 +30,7 @@ else
                         </div>
                     </div>
 
-                    <EditForm Model="OrdenDTO" OnInvalidSubmit="ConfirmarOrdenAsync">
+                    <EditForm Model="OrdenDTO" OnValidSubmit="ConfirmarOrdenAsync">
                         <DataAnnotationsValidator/>
                         <div class="mb-3">
                             <label>Comentarios:</label>
@@ -150,6 +150,27 @@ else
 
     private async Task ConfirmarOrdenAsync()
     {
-        //TODO: Pendiente de implementar
+        var confirm = await sweetAlertService.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = "¿Desea realizar el pedido de los artículos que se encuentran en su carrito de compras?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton = true,
+            CancelButtonText = "No",
+            ConfirmButtonText = "Si"
+        });
+
+        if (string.IsNullOrEmpty(confirm.Value)) return;
+
+        var responseHttp = await repository.Post("/api/ordenes", OrdenDTO);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        navigationManager.NavigateTo("/Ordenes/OrdenConfirmada");
     }
 }

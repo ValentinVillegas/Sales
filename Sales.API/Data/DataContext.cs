@@ -13,20 +13,15 @@ namespace Sales.API.Data
         }
 
         public DbSet<Pais> Paises { get; set; }
-
         public DbSet<Estado> Estados { get; set; }
-
         public DbSet<Municipio> Municipios { get; set; }
-
         public DbSet<Categoria> Categorias { get; set; }
-
         public DbSet<Producto> Productos { get; set; }
-
         public DbSet<ProductoCategoria> ProductoCategorias { get; set; }
-
         public DbSet<ProductoImage> ProductoImagenes { get; set; }
-
         public DbSet<OrdenTemporal> OrdenesTemporales { get; set; }
+        public DbSet<Orden> Ordenes{ get; set; }
+        public DbSet<OrdenDetalle> OrdenesDetalles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

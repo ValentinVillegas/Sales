@@ -224,6 +224,65 @@ namespace Sales.API.Migrations
                     b.ToTable("Municipios");
                 });
 
+            modelBuilder.Entity("Sales.Shared.Entidades.Orden", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comentarios")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OrdenEstatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UsuarioId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("Ordenes");
+                });
+
+            modelBuilder.Entity("Sales.Shared.Entidades.OrdenDetalle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<float>("Cantidad")
+                        .HasColumnType("real");
+
+                    b.Property<string>("Comentarios")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrdenId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrdenId");
+
+                    b.HasIndex("ProductoId");
+
+                    b.ToTable("OrdenesDetalles");
+                });
+
             modelBuilder.Entity("Sales.Shared.Entidades.OrdenTemporal", b =>
                 {
                     b.Property<int>("Id")
@@ -526,14 +585,42 @@ namespace Sales.API.Migrations
                     b.Navigation("Estado");
                 });
 
+            modelBuilder.Entity("Sales.Shared.Entidades.Orden", b =>
+                {
+                    b.HasOne("Sales.Shared.Entidades.Usuario", "Usuario")
+                        .WithMany("Ordenes")
+                        .HasForeignKey("UsuarioId");
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("Sales.Shared.Entidades.OrdenDetalle", b =>
+                {
+                    b.HasOne("Sales.Shared.Entidades.Orden", "Orden")
+                        .WithMany("OrdenDetalles")
+                        .HasForeignKey("OrdenId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Sales.Shared.Entidades.Producto", "Producto")
+                        .WithMany("OrdenDetalles")
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Orden");
+
+                    b.Navigation("Producto");
+                });
+
             modelBuilder.Entity("Sales.Shared.Entidades.OrdenTemporal", b =>
                 {
                     b.HasOne("Sales.Shared.Entidades.Producto", "Producto")
-                        .WithMany("VentasTemporales")
+                        .WithMany("OrdenesTemporales")
                         .HasForeignKey("ProductoId");
 
                     b.HasOne("Sales.Shared.Entidades.Usuario", "Usuario")
-                        .WithMany("VentasTemporales")
+                        .WithMany("OrdenesTemporales")
                         .HasForeignKey("UsuarioId");
 
                     b.Navigation("Producto");
@@ -597,6 +684,11 @@ namespace Sales.API.Migrations
                     b.Navigation("Usuarios");
                 });
 
+            modelBuilder.Entity("Sales.Shared.Entidades.Orden", b =>
+                {
+                    b.Navigation("OrdenDetalles");
+                });
+
             modelBuilder.Entity("Sales.Shared.Entidades.Pais", b =>
                 {
                     b.Navigation("Estados");
@@ -606,14 +698,18 @@ namespace Sales.API.Migrations
                 {
                     b.Navigation("CategoriasProducto");
 
-                    b.Navigation("ProductoImagenes");
+                    b.Navigation("OrdenDetalles");
 
-                    b.Navigation("VentasTemporales");
+                    b.Navigation("OrdenesTemporales");
+
+                    b.Navigation("ProductoImagenes");
                 });
 
             modelBuilder.Entity("Sales.Shared.Entidades.Usuario", b =>
                 {
-                    b.Navigation("VentasTemporales");
+                    b.Navigation("Ordenes");
+
+                    b.Navigation("OrdenesTemporales");
                 });
 #pragma warning restore 612, 618
         }
