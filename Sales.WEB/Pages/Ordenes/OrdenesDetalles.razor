@@ -1,0 +1,153 @@
+﻿@page "/Ordenes/Detalles/{OrdenId:int}"
+@inject IRepository repository
+@inject SweetAlertService sweetAlertService
+@inject NavigationManager navigationManager
+@attribute [Authorize(Roles = "Admin")]
+
+@if(orden is null)
+{
+    <div class="spinner"/>
+}
+
+else
+{
+    <ListaGenerica MiLista="orden.OrdenDetalles!.ToList()">
+        <Body>
+            <div class="card">
+                <div class="card-header">
+                    <span>
+                        <i class="oi oi-layers" />&nbsp;<strong>Pedido #@orden.Id</strong>
+                        @if(orden.OrdenEstatus == OrdenEstatus.Nuevo){
+                            <button class="btn btn-sm btn-danger float-end mx-2" @onclick=@(() => CancelarOrdenAsync())><i class="oi oi-trash" />&nbsp;Cancelar</button>
+                            <button class="btn btn-sm btn-primary float-end mx-2" @onclick=@(() => DespacharOrdenAsync())><i class="oi oi-external-link" />&nbsp;Despachar</button>
+                        }
+                        else if (orden.OrdenEstatus == OrdenEstatus.Despachado)
+                        {
+                            <button class="btn btn-sm btn-warning float-end mx-2" @onclick=@(() => EnviarOrdenAsync())><i class="oi oi-location" />&nbsp;Enviar</button>
+                        }
+                        else if (orden.OrdenEstatus == OrdenEstatus.Enviado)
+                        {
+                            <button class="btn btn-sm btn-dark float-end mx-2" @onclick=@(() => ConfirmarOrdenAsync())><i class="oi oi-thumb-up" />&nbsp;Confirmar</button>
+                        }
+                        <a class="btn btn-sm btn-success float-end" href="/Ordenes"><i class="oi oi-arrow-thick-left" />&nbsp;Regresar</a>
+                    </span>
+                </div>
+
+                <div class="row mx-2 my-2">
+                    <div class="col-2">
+                        <p>Cliente</p>
+                        <p>Documento</p>
+                        <p>Teléfono</p>
+                        <p>Email</p>
+                        <p>Dirección</p>
+                    </div>
+
+                    <div class="col-4">
+                        <p><strong>@orden.Usuario!.NombreCompleto</strong></p>
+                        <p><strong>@orden.Usuario.Documento</strong></p>
+                        <p><strong>@orden.Usuario.PhoneNumber</strong></p>
+                        <p><strong>@orden.Usuario.Nombre</strong></p>
+                        <p><strong>@orden.Usuario.Direccion, @orden.Usuario.Municipio!.Nombre, @orden.Usuario.Municipio.Estado!.Nombre, @orden.Usuario.Municipio.Estado.Pais!.Nombre</strong></p>
+                    </div>
+
+                    <div class="col-2">
+                        <p>Estatus</p>
+                        <p>Fecha</p>
+                        <p>Comentarios</p>
+                        <p>Partidas</p>
+                        <p>Cant. Prods</p>
+                        <p>SubTotal</p>
+                    </div>
+
+                    <div class="col-4">
+                        <p><strong>@orden.OrdenEstatus</strong></p>
+                        <p><strong>@($"{orden.Fecha.ToLocalTime():dd/MM/yyyy hh:mm tt}")</strong></p>
+                        <p><strong>@(string.IsNullOrEmpty(orden.Comentarios) ? "N/A" : orden.Comentarios)</strong></p>
+                        <p><strong>@orden.Partidas</strong></p>
+                        <p><strong>@($"{orden.Cantidad:N2}")</strong></p>
+                        <p><strong>@($"{orden.SubTotal:C2}")</strong></p>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Imagen</th>
+                                <th>Comentarios</th>
+                                <th>Cantidad</th>
+                                <th>Precio</th>
+                                <th>Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var ordenDetalle in orden.OrdenDetalles!){
+                                <tr>
+                                    <td>@ordenDetalle.Producto.Nombre</td>
+                                    <td><img src="@ordenDetalle.Producto.ImagenPrincipal" style="width:100px;" /></td>
+                                    <td>@ordenDetalle.Comentarios</td>
+                                    <td>@ordenDetalle.Cantidad</td>
+                                    <td>@ordenDetalle.Producto.Precio</td>
+                                    <td>@ordenDetalle.Importe</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </Body>
+    </ListaGenerica>
+}
+
+@code {
+    private Orden? orden;
+
+    [Parameter]
+    public int OrdenId { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var responseHttp = await repository.Get<Orden>($"/api/ordenes/{OrdenId}");
+
+        if (responseHttp.Error)
+        {
+            if(responseHttp.HttpResponseMessage.StatusCode == HttpStatusCode.NotFound)
+            {
+                navigationManager.NavigateTo("/ordenes");
+                return;
+            }
+
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        orden = responseHttp.Response;
+    }
+
+    private void CancelarOrdenAsync()
+    {
+
+    }
+
+    private void DespacharOrdenAsync()
+    {
+
+    }
+
+    private void EnviarOrdenAsync()
+    {
+
+    }
+
+    private void ConfirmarOrdenAsync()
+    {
+        
+    }
+}

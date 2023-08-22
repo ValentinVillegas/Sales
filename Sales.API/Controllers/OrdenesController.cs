@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Sales.API.Data;
 using Sales.API.Helpers;
 using Sales.Shared.DTOs;
+using Sales.Shared.Entidades;
 using Sales.Shared.Enums;
 
 namespace Sales.API.Controllers
@@ -60,6 +61,17 @@ namespace Sales.API.Controllers
             return Ok(totalPaginas);
         }
 
+        [HttpGet("{ordenId:int}")]
+        public async Task<IActionResult>GetAsync(int OrdenId)
+        {
+            var orden = await _context.Ordenes.Include(o => o.Usuario).ThenInclude(u => u.Municipio).ThenInclude(m => m.Estado).ThenInclude(e => e.Pais)
+                .Include(o => o.OrdenDetalles!).ThenInclude(od => od.Producto).ThenInclude(p => p.ProductoImagenes).FirstOrDefaultAsync(o => o.Id == OrdenId);
+
+            if(orden is null) return NotFound();
+
+            return Ok(orden);
+        }
+
         [HttpPost]
         public async Task<IActionResult> PostAsync(OrdenDTO ordenDTO)
         {
@@ -68,6 +80,41 @@ namespace Sales.API.Controllers
             if (response.IsSucces) return NoContent();
 
             return BadRequest(response.Message);
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> PutAsync(OrdenDTO ordenDTO)
+        {
+            var usuario = await _userHelper.GetUserAsync(User.Identity!.Name!);
+
+            if(usuario is null) return NotFound();
+
+            var esAdministrador = await _userHelper.IsUserInRoleAsync(usuario, UserType.Admin.ToString());
+
+            if (!esAdministrador) return BadRequest("Necesitar ser administrador para ejecutar esta acción");
+
+            var orden = await _context.Ordenes.Include(o => o.OrdenDetalles).FirstOrDefaultAsync(o => o.Id == ordenDTO.Id);
+
+            if(orden is null) return NotFound();
+
+            if (ordenDTO.OrdenEstatus == OrdenEstatus.Cancelado) await IncrementarExistenciaAsync(orden);
+
+            orden.OrdenEstatus = ordenDTO.OrdenEstatus;
+            _context.Ordenes.Update(orden);
+            await _context.SaveChangesAsync();
+            return Ok(orden);
+        }
+
+        private async Task IncrementarExistenciaAsync(Orden orden)
+        {
+            foreach (var ordenDetalle in orden.OrdenDetalles!)
+            {
+                var producto = await _context.Productos.FirstOrDefaultAsync(p => p.Id == ordenDetalle.ProductoId);
+
+                if (producto is not null) producto.Stock += ordenDetalle.Cantidad;
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }
