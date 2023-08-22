@@ -2,7 +2,7 @@
 @inject IRepository repository
 @inject SweetAlertService sweetAlertService
 @inject NavigationManager navigationManager
-@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize(Roles = "Admin, User")]
 
 @if(Ordenes is null)
 {
@@ -26,8 +26,13 @@ else
                     <table class="table table-striped">
                         <thead>
                             <tr>
+                                <th>Folio</th>
                                 <th>Fecha</th>
-                                <th>Usuario</th>
+                                <AuthorizeView Roles="Admin">
+                                    <Authorized>
+                                        <th>Usuario</th>
+                                    </Authorized>
+                                </AuthorizeView>
                                 <th>Comentario</th>
                                 <th>Estado</th>
                                 <th>Partidas</th>
@@ -39,8 +44,13 @@ else
                         <tbody>
                             @foreach(var orden in Ordenes){
                                 <tr>
+                                    <td>@($"{orden.Id}")</td>
                                     <td>@($"{orden.Fecha.ToLocalTime():yyyy/MM/dd hh:mm tt}")</td>
-                                    <td>@($"{orden.Usuario!.NombreCompleto}")</td>
+                                    <AuthorizeView Roles="Admin">
+                                        <Authorized>
+                                            <td>@($"{orden.Usuario!.NombreCompleto}")</td>
+                                        </Authorized>
+                                    </AuthorizeView>
                                     <td>@($"{orden.Comentarios}")</td>
                                     <td>@($"{orden.OrdenEstatus}")</td>
                                     <td>@($"{orden.Partidas}")</td>

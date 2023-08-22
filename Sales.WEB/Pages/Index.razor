@@ -53,8 +53,11 @@ else
                     </div>
                     <div class="card-body">
                         <h5 class="card-title text-navy"> @producto.Nombre</h5>
-                        <p class="card-text smfnt">@producto.Descripcion</p>
-                        <h5 class="text-muted">@($"{producto.Precio:C2}")</h5>
+                        <p class="card-text">@producto.Descripcion</p>
+                        <div>
+                            <div class="d-inline card-text">Existencia: @producto.Stock pzs.</div>
+                            <div class="d-inline h5 text-muted float-end">@($"{producto.Precio:C2}")</div>
+                        </div>
                     </div>
                     <div class="card-footer text-center">
                         <a href="/productos/detalles/@producto.Id" class="btn btn-sm btn-secondary"><i class="oi oi-info" />&nbsp;Detalles</a>

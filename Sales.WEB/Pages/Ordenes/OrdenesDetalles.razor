@@ -2,7 +2,7 @@
 @inject IRepository repository
 @inject SweetAlertService sweetAlertService
 @inject NavigationManager navigationManager
-@attribute [Authorize(Roles = "Admin")]
+@attribute [Authorize(Roles = "Admin, User")]
 
 @if(orden is null)
 {
@@ -19,17 +19,29 @@ else
                         <i class="oi oi-layers" />&nbsp;<strong>Pedido #@orden.Id</strong>
                         @if(orden.OrdenEstatus == OrdenEstatus.Nuevo){
                             <button class="btn btn-sm btn-danger float-end mx-2" @onclick=@(() => CancelarOrdenAsync())><i class="oi oi-trash" />&nbsp;Cancelar</button>
-                            <button class="btn btn-sm btn-primary float-end mx-2" @onclick=@(() => DespacharOrdenAsync())><i class="oi oi-external-link" />&nbsp;Despachar</button>
+                            <AuthorizeView Roles="Admin">
+                                <Authorized>
+                                    <button class="btn btn-sm btn-primary float-end mx-2" @onclick=@(() => DespacharOrdenAsync())><i class="oi oi-external-link" />&nbsp;Despachar</button>
+                                </Authorized>
+                            </AuthorizeView>
                         }
-                        else if (orden.OrdenEstatus == OrdenEstatus.Despachado)
-                        {
-                            <button class="btn btn-sm btn-warning float-end mx-2" @onclick=@(() => EnviarOrdenAsync())><i class="oi oi-location" />&nbsp;Enviar</button>
-                        }
-                        else if (orden.OrdenEstatus == OrdenEstatus.Enviado)
-                        {
-                            <button class="btn btn-sm btn-dark float-end mx-2" @onclick=@(() => ConfirmarOrdenAsync())><i class="oi oi-thumb-up" />&nbsp;Confirmar</button>
-                        }
+
+                        <AuthorizeView Roles="Admin">
+                            <Authorized>
+                                @if (orden.OrdenEstatus == OrdenEstatus.Despachado)
+                                {
+                                    <button class="btn btn-sm btn-warning float-end mx-2" @onclick=@(() => EnviarOrdenAsync())><i class="oi oi-location" />&nbsp;Enviar</button>
+                                }
+
+                                @if (orden.OrdenEstatus == OrdenEstatus.Enviado)
+                                {
+                                    <button class="btn btn-sm btn-dark float-end mx-2" @onclick=@(() => ConfirmarOrdenAsync())><i class="oi oi-thumb-up" />&nbsp;Confirmar</button>
+                                }
+                            </Authorized>
+                        </AuthorizeView>
+
                         <a class="btn btn-sm btn-success float-end" href="/Ordenes"><i class="oi oi-arrow-thick-left" />&nbsp;Regresar</a>
+
                     </span>
                 </div>
 
@@ -131,23 +143,53 @@ else
         orden = responseHttp.Response;
     }
 
-    private void CancelarOrdenAsync()
+    private async Task ModificarOrdenAsync(string mensaje, OrdenEstatus estatus)
     {
+        var confirm = await sweetAlertService.FireAsync(new SweetAlertOptions
+        {
+            Title = "Confirmación",
+            Text = $"¿Está seguro que quiere {mensaje} el pedido?",
+            Icon = SweetAlertIcon.Question,
+            ShowCancelButton  = true
+        });
 
+        if (string.IsNullOrEmpty(confirm.Value)) return;
+
+        var ordenDTO = new OrdenDTO
+        {
+            Id = OrdenId,
+            OrdenEstatus = estatus
+        };
+
+        var responseHttp = await repository.Put("/api/ordenes", ordenDTO);
+
+        if (responseHttp.Error)
+        {
+            var message = await responseHttp.GetErrorMessageAsync();
+            await sweetAlertService.FireAsync("Error", message, SweetAlertIcon.Error);
+            return;
+        }
+
+        navigationManager.NavigateTo("/ordenes");
     }
 
-    private void DespacharOrdenAsync()
+    private async Task CancelarOrdenAsync()
     {
-
+        await ModificarOrdenAsync("cancelar", OrdenEstatus.Cancelado);
     }
 
-    private void EnviarOrdenAsync()
+    private async Task DespacharOrdenAsync()
     {
-
+        await ModificarOrdenAsync("despachar", OrdenEstatus.Despachado);
     }
 
-    private void ConfirmarOrdenAsync()
+    private async Task EnviarOrdenAsync()
     {
-        
+        await ModificarOrdenAsync("enviar", OrdenEstatus.Enviado);
+    }
+
+    private async Task ConfirmarOrdenAsync()
+    {
+        await ModificarOrdenAsync("cerrar", OrdenEstatus.Confirmado);
     }
 }

@@ -91,7 +91,7 @@ namespace Sales.API.Controllers
 
             var esAdministrador = await _userHelper.IsUserInRoleAsync(usuario, UserType.Admin.ToString());
 
-            if (!esAdministrador) return BadRequest("Necesitar ser administrador para ejecutar esta acción");
+            if (!esAdministrador && ordenDTO.OrdenEstatus != OrdenEstatus.Cancelado) return BadRequest("Necesitar ser administrador para ejecutar esta acción");
 
             var orden = await _context.Ordenes.Include(o => o.OrdenDetalles).FirstOrDefaultAsync(o => o.Id == ordenDTO.Id);
 
