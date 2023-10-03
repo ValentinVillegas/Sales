@@ -25,9 +25,9 @@ namespace Sales.API.Data
 
         public async Task SeedAsync()
         {
-            await _context.Database.EnsureCreatedAsync();
+            //await _context.Database.EnsureCreatedAsync();
             await CheckCategoriasAsync();
-            await CheckPaisesAsync();
+            //await CheckPaisesAsync();
             await CheckRolesAsync();
             await CheckUserAsync("1010", "Valentin", "Villegas", "valentinvillegas22@yopmail.com", "8114638521", "Calle Luna Calle Sol", "user.jpg", UserType.Admin);
             await CheckUserAsync("2020", "Ledys", "Bedoya", "ledys@yopmail.com", "322 311 4620", "Calle Luna Calle Sol", "LedysBedoya.jpeg", UserType.User);
@@ -35,7 +35,6 @@ namespace Sales.API.Data
             await CheckUserAsync("4040", "Angelina", "Jolie", "angelina@yopmail.com", "322 311 4620", "Calle Luna Calle Sol", "Angelina.jpg", UserType.User);
             await CheckUserAsync("5050", "Bob", "Marley", "bob@yopmail.com", "322 311 4620", "Calle Luna Calle Sol", "bob.jpg", UserType.User);
             await CheckProductsAsync();
-
         }
 
         private async Task CheckCategoriasAsync()

@@ -22,6 +22,7 @@ namespace Sales.API.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult> GetAsync([FromQuery] PaginationDTO paginacion)
         {
             var queryable = _context.Categorias.AsQueryable();

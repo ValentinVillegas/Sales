@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CurrieTechnologies.Razor.SweetAlert2;
+using Microsoft.Extensions.Logging;
+using Sales.Mobile.Data;
+using Sales.Mobile.Services;
 
 namespace Sales.Mobile
 {
@@ -12,12 +15,21 @@ namespace Sales.Mobile
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                    fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                 });
 
+            builder.Services.AddMauiBlazorWebView();
+
 #if DEBUG
+		builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();
 #endif
+
+            builder.Services.AddSingleton<WeatherForecastService>();
+            //builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://localhost:7125") });
+            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.1.143:9040") });
+            builder.Services.AddSweetAlert2();
+            builder.Services.AddScoped<IRequestProvider, RequestProvider>();
+            builder.Services.AddScoped<ICategoriasService, CategoriasService>();
 
             return builder.Build();
         }
